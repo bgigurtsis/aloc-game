@@ -169,6 +169,11 @@ button.cta { align-self: flex-start; margin-top: 8px; }
 .choice .desc { font-size: 11px; color: var(--ink); }
 .noise { white-space: pre; }
 
+/* operator actions that have already been tried and failed */
+.choice.failed { opacity: 0.45; cursor: default; }
+.choice.failed:hover { border-color: var(--dim); }
+.fail-tag { color: var(--danger); text-transform: uppercase; letter-spacing: 0.12em; }
+
 /* ---------- trajectory terminal ---------- */
 
 .term {
@@ -196,6 +201,10 @@ body.defender .strip { color: var(--def-dim); }
 body.defender .log .t { color: var(--def-dim); }
 body.defender button { color: var(--def-accent); border-color: var(--def-dim); }
 body.defender button:hover { border-color: var(--def-accent); }
+/* the operator's own terminal is blue; green stays the agent's colour */
+body.defender .term .in { color: var(--def-accent); }
+body.defender .choice .name { color: var(--def-accent); }
+body.defender .choice .desc { color: var(--def-ink); }
 
 .log {
   display: flex;
@@ -205,6 +214,31 @@ body.defender button:hover { border-color: var(--def-accent); }
 }
 .log .line { display: flex; gap: 10px; }
 .log .t { flex: none; }
+
+/* ---------- spread map globe ---------- */
+
+/* the globe lives on the defender's console; only the markers are the
+   agent's phosphor green (--alert is 0 here, so --accent reads green) */
+.globe {
+  color: var(--def-ink);
+  line-height: 1;
+  white-space: pre;
+  font-size: clamp(6px, 2.2vw, 11px);
+  align-self: center;
+}
+.globe .marker { color: var(--accent); text-shadow: var(--glow); }
+
+.ticker {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--def-dim);
+  letter-spacing: 0.04em;
+  min-height: 14em;
+}
+.ticker .region { color: var(--def-accent); }
+.ticker .status { color: var(--accent); text-shadow: var(--glow); margin-top: 6px; }
 
 /* ---------- glitch (two frames, used at mutations and the pov flip) ---------- */
 
@@ -255,4 +289,5 @@ body.defender button:hover { border-color: var(--def-accent); }
 @media (min-width: 700px) {
   html, body { font-size: 15px; }
   .agent { font-size: 14px; }
+  .globe { font-size: 12px; }
 }

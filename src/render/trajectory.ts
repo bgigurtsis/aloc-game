@@ -1,8 +1,8 @@
 import { el } from "./dom.ts";
 import type { ToolCall } from "../content.ts";
 
-const LINE_MS = 520;
-const OUT_MS = 240;
+const LINE_MS = 1000;
+const OUT_MS = 340;
 
 // Prints a trajectory as terminal output, one call at a time. Returns a promise
 // that resolves when printing finishes. Renderers never decide game outcomes;

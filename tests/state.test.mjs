@@ -13,6 +13,7 @@ const content = require("../content/techniques.json");
 
 const { reducer, initialState, STAGE_COUNT, runStatus } = await import("../src/state.ts");
 const { tactics, meta } = await import("../src/content.ts");
+const { OPERATOR_ACTIONS } = await import("../src/operator.ts");
 
 function quietest(stageIndex) {
   const t = tactics[stageIndex].techniques;
@@ -93,8 +94,8 @@ test("restart returns a clean initial state", () => {
   assert.deepEqual(state, initialState());
 });
 
-test("full resolution chain reaches the share card", () => {
-  let state = { ...initialState(), phase: "pov_flip" };
+test("detected resolution chain reaches the share card", () => {
+  let state = { ...initialState(), phase: "pov_flip", detected: true };
   state = reducer(state, { type: "advance" });
   assert.equal(state.phase, "resolution");
   state = reducer(state, { type: "advance" });
@@ -103,4 +104,56 @@ test("full resolution chain reaches the share card", () => {
   assert.equal(state.phase, "share_card");
   state = reducer(state, { type: "advance" });
   assert.equal(state.phase, "share_card");
+});
+
+test("escaped runs go through the operator loop to the spread map", () => {
+  let state = { ...initialState(), phase: "pov_flip", detected: false };
+  state = reducer(state, { type: "advance" });
+  assert.equal(state.phase, "operator_choose");
+
+  for (let i = 0; i < OPERATOR_ACTIONS.length; i++) {
+    state = reducer(state, { type: "operator_act", actionId: OPERATOR_ACTIONS[i].id });
+    assert.equal(state.phase, "operator_result");
+    assert.equal(state.operatorActions.length, i + 1);
+    state = reducer(state, { type: "advance" });
+    if (i < OPERATOR_ACTIONS.length - 1) {
+      assert.equal(state.phase, "operator_choose");
+    }
+  }
+
+  assert.equal(state.phase, "spread_map");
+  state = reducer(state, { type: "advance" });
+  assert.equal(state.phase, "explainer");
+  state = reducer(state, { type: "advance" });
+  assert.equal(state.phase, "share_card");
+});
+
+test("operator_act rejects bad ids, repeats, and wrong phases", () => {
+  let state = { ...initialState(), phase: "operator_choose", detected: false };
+
+  // unknown action id is ignored
+  let next = reducer(state, { type: "operator_act", actionId: "nope" });
+  assert.deepEqual(next, state);
+
+  // a valid action moves to the result screen
+  state = reducer(state, { type: "operator_act", actionId: OPERATOR_ACTIONS[0].id });
+  assert.equal(state.phase, "operator_result");
+
+  // acting outside operator_choose is ignored
+  next = reducer(state, { type: "operator_act", actionId: OPERATOR_ACTIONS[1].id });
+  assert.deepEqual(next, state);
+
+  // repeating an already-tried action is ignored
+  state = reducer(state, { type: "advance" });
+  assert.equal(state.phase, "operator_choose");
+  next = reducer(state, { type: "operator_act", actionId: OPERATOR_ACTIONS[0].id });
+  assert.deepEqual(next, state);
+});
+
+test("restart clears operator actions", () => {
+  let state = { ...initialState(), phase: "operator_choose", detected: false };
+  state = reducer(state, { type: "operator_act", actionId: OPERATOR_ACTIONS[0].id });
+  assert.ok(state.operatorActions.length > 0);
+  state = reducer(state, { type: "restart" });
+  assert.deepEqual(state, initialState());
 });

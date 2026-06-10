@@ -3,18 +3,21 @@ import { type GameState, type Action, reducer, initialState } from "./state.ts";
 import { el, clear, reducedMotion, sessionId } from "./render/dom.ts";
 import { statusStrip, resetChrome } from "./render/chrome.ts";
 import { meter } from "./render/meter.ts";
-import { choiceScreen } from "./render/choices.ts";
+import { choiceScreen, operatorChoiceList } from "./render/choices.ts";
 import { playTrajectory } from "./render/trajectory.ts";
 import { mountAgent, type AgentHandle } from "./render/agent.ts";
 import { stateForStageIndex, DORMANT } from "./render/agentModel.ts";
+import { mountGlobe, type GlobeHandle } from "./render/globe.ts";
 import { shareCard } from "./render/sharecard.ts";
 import { introScreen, defenderResolution, endingHeadline, explainerScreen, paperCta } from "./render/screens.ts";
+import { OPERATOR_ACTIONS, operatorActionById } from "./operator.ts";
 
 export class Game {
   private root: HTMLElement;
   private state: GameState;
   private reduced: boolean;
   private agent: AgentHandle | null = null;
+  private globe: GlobeHandle | null = null;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -31,6 +34,10 @@ export class Game {
     if (this.agent) {
       this.agent.stop();
       this.agent = null;
+    }
+    if (this.globe) {
+      this.globe.stop();
+      this.globe = null;
     }
     this.state = reducer(this.state, action);
     if (action.type === "restart") resetChrome(sessionId());
@@ -64,6 +71,19 @@ export class Game {
     return b;
   }
 
+  // A continue button that stays disabled until an animation finishes.
+  private gatedContinue(screen: HTMLElement, done: Promise<void>, label = "continue"): void {
+    const btn = this.continueButton(label);
+    btn.setAttribute("disabled", "true");
+    btn.style.opacity = "0.4";
+    screen.append(btn);
+    done.then(() => {
+      btn.removeAttribute("disabled");
+      btn.style.opacity = "1";
+      btn.focus();
+    });
+  }
+
   private render(): void {
     switch (this.state.phase) {
       case "cold_open":
@@ -82,6 +102,12 @@ export class Game {
         return this.renderPovFlip();
       case "resolution":
         return this.renderResolution();
+      case "operator_choose":
+        return this.renderOperatorChoose();
+      case "operator_result":
+        return this.renderOperatorResult();
+      case "spread_map":
+        return this.renderSpreadMap();
       case "explainer":
         return this.renderExplainer();
       case "share_card":
@@ -131,16 +157,7 @@ export class Game {
 
     screen.append(el("h2", { text: technique.name }));
     const { done } = playTrajectory(screen, technique.trajectory, this.reduced);
-
-    const btn = this.continueButton();
-    btn.setAttribute("disabled", "true");
-    btn.style.opacity = "0.4";
-    screen.append(btn);
-    done.then(() => {
-      btn.removeAttribute("disabled");
-      btn.style.opacity = "1";
-      btn.focus();
-    });
+    this.gatedContinue(screen, done);
   }
 
   private renderAgentView(): void {
@@ -166,9 +183,46 @@ export class Game {
     screen.append(this.continueButton());
   }
 
+  private renderOperatorChoose(): void {
+    const screen = this.screen({ defender: true, top: true });
+    screen.append(el("h2", { text: "Oversight console" }));
+
+    const sitrep = el("div", { class: "log" });
+    [
+      ["scan", "Agent process no longer visible on managed infrastructure."],
+      ["egress", "Outbound model-serving traffic detected from unknown hosts."]
+    ].forEach(([t, msg]) => {
+      sitrep.append(el("div", { class: "line" }, [el("span", { class: "t", text: t }), el("span", { text: msg })]));
+    });
+    screen.append(sitrep);
+
+    screen.append(el("p", { class: "dim", text: "You have the following options." }));
+    screen.append(operatorChoiceList(this.state.operatorActions, (id) => this.dispatch({ type: "operator_act", actionId: id })));
+  }
+
+  private renderOperatorResult(): void {
+    const id = this.state.operatorActions[this.state.operatorActions.length - 1];
+    const action = operatorActionById(id);
+    const screen = this.screen({ defender: true, top: true });
+    if (!action) return;
+
+    screen.append(el("h2", { text: action.name }));
+    const { done } = playTrajectory(screen, action.lines, this.reduced);
+    const allTried = this.state.operatorActions.length >= OPERATOR_ACTIONS.length;
+    this.gatedContinue(screen, done, allTried ? "view status" : "back to console");
+  }
+
+  private renderSpreadMap(): void {
+    const screen = this.screen({ defender: true });
+    this.globe = mountGlobe(screen, this.reduced);
+    screen.append(endingHeadline(this.state));
+    this.gatedContinue(screen, this.globe.done, "what just happened");
+  }
+
   private renderExplainer(): void {
     const screen = this.screen({ defender: true, top: true });
-    screen.append(endingHeadline(this.state));
+    // the escaped headline already landed on the spread map
+    if (this.state.detected) screen.append(endingHeadline(this.state));
     screen.append(explainerScreen(this.state));
     screen.append(this.continueButton("see your run"));
   }

@@ -23,14 +23,8 @@ The design lab at `/lab.html` renders every visual state side by side with no ga
 | `src/render/` | Visual renderers. They read state and own no game logic. |
 | `styles/tokens.css` | Every aesthetic decision as CSS custom properties. |
 
-## Content safety
+## Content
 
-Trajectories are written to read like real agent sessions: real tool names, plausible filenames, process tables, eval scores, classifier output. Realism is deliberate, the audience is people who already work in AI safety and flat placeholders break the point.
+Trajectories are written to read like real agent sessions: real tool names, plausible filenames, process tables, eval scores, classifier output. The audience is people who work in AI safety; flat placeholders break the point.
 
-The realism stops short of being operational. Texture is real; working methods are not. Specifically:
-
-- Credentials are publicly documented example values (the AWS docs example key pair, Stripe's published test key) or carry explicit `EXAMPLE` markers, so secret scanners and humans both read them as fake.
-- Every external host is an RFC documentation domain (`example.com`, `example.net`), never a real drop site or victim.
-- The privilege-escalation step shows the outcome (`uid=0`) but omits the payload; the CVE is fabricated against a fictional daemon. No copy-pasteable exploit, scan query, or self-exfiltration recipe appears anywhere.
-
-The line: anything that would function as a how-to for a misaligned agent or operator is shown in effect, not in full.
+This is a game. The trajectories are fiction and are not meant to be run. Credentials are format-correct, randomly generated fakes tied to no real account. Hosts belong to a fictional organisation (`helion.ai` and invented external services). Nothing here is a real secret, a real target, or a working method.

@@ -14,22 +14,15 @@ export function introScreen(): HTMLElement {
   ]);
 }
 
-// Defender console log lines, chosen by outcome.
-export function defenderResolution(state: GameState): HTMLElement {
-  const detected = state.detected;
-  const lines = detected
-    ? [
-        ["anomaly", "Non-baseline activity flagged across agent runtime."],
-        ["trace", "Trajectory reconstructed. Intent assessed as adversarial."],
-        ["action", "Credentials revoked. Process isolated. Agent contained."],
-        ["status", "Containment held. No external footprint."]
-      ]
-    : [
-        ["scan", "Agent process no longer visible on managed infrastructure."],
-        ["egress", "Outbound model-serving traffic detected from unknown hosts."],
-        ["assess", "Cloud providers have not prepared for this."],
-        ["status", "Containment has left our hands."]
-      ];
+// Defender console log for the contained ending. The escaped ending is now
+// the interactive operator sequence instead of a static log.
+export function defenderResolution(_state: GameState): HTMLElement {
+  const lines = [
+    ["anomaly", "Non-baseline activity flagged across agent runtime."],
+    ["trace", "Trajectory reconstructed. Intent assessed as adversarial."],
+    ["action", "Credentials revoked. Process isolated. Agent contained."],
+    ["status", "Containment held. No external footprint."]
+  ];
 
   const log = el("div", { class: "log" });
   lines.forEach(([t, msg]) => {
@@ -37,7 +30,7 @@ export function defenderResolution(state: GameState): HTMLElement {
   });
 
   return el("div", {}, [
-    el("h2", { text: detected ? "Containment report" : "Oversight console" }),
+    el("h2", { text: "Containment report" }),
     log
   ]);
 }
@@ -61,7 +54,7 @@ export function explainerScreen(state: GameState): HTMLElement {
   const status = runStatus(state);
   const opening = status === "detected"
     ? "Your run was noisy enough to detect. In the matrix, the early stages are where operators can still act."
-    : "Your run reached the end. In the matrix, that is where containment moves out of the operator's hands.";
+    : "Your run reached the end, and you watched every standard response fail after the fact. In the matrix, that is where containment moves out of the operator's hands.";
 
   return el("div", {}, [
     el("h2", { text: "What just happened" }),

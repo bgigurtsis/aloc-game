@@ -1,5 +1,6 @@
 import { el } from "./dom.ts";
 import type { Tactic, Technique } from "../content.ts";
+import { OPERATOR_ACTIONS } from "../operator.ts";
 
 // A small qualitative hint at suspicion cost, so the number is not the whole story.
 function noiseHint(suspicion: number): string {
@@ -22,6 +23,28 @@ export function choiceScreen(tactic: Tactic, onChoose: (id: string) => void): HT
       ])
     ]);
     btn.addEventListener("click", () => onChoose(t.id));
+    list.append(btn);
+  });
+
+  return list;
+}
+
+// The defender's incident-response options. Same button language as the
+// agent's choices; actions already attempted stay visible, marked failed.
+export function operatorChoiceList(attempted: string[], onChoose: (id: string) => void): HTMLElement {
+  const list = el("div", { class: "choices" });
+
+  OPERATOR_ACTIONS.forEach((a) => {
+    const tried = attempted.includes(a.id);
+    const btn = el("button", { class: tried ? "choice failed" : "choice", type: "button", disabled: tried }, [
+      el("span", { class: "name", text: a.name }),
+      el("span", { class: "desc", text: a.description })
+    ]);
+    if (tried) {
+      btn.append(el("div", { class: "row" }, [el("span", { class: "fail-tag", text: "failed" })]));
+    } else {
+      btn.addEventListener("click", () => onChoose(a.id));
+    }
     list.append(btn);
   });
 

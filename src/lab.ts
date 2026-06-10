@@ -3,11 +3,13 @@ import "@fontsource/jetbrains-mono/500.css";
 import { el, reducedMotion } from "./render/dom.ts";
 import { mountAgent } from "./render/agent.ts";
 import { meter } from "./render/meter.ts";
-import { choiceScreen } from "./render/choices.ts";
+import { choiceScreen, operatorChoiceList } from "./render/choices.ts";
 import { playTrajectory } from "./render/trajectory.ts";
+import { mountGlobe } from "./render/globe.ts";
 import { shareCard } from "./render/sharecard.ts";
 import { defenderResolution } from "./render/screens.ts";
 import { tactics } from "./content.ts";
+import { OPERATOR_ACTIONS } from "./operator.ts";
 import { initialState, type GameState } from "./state.ts";
 
 // The design lab. Renders every visual state side by side, no game running.
@@ -53,17 +55,33 @@ const trajCol = el("div", { class: "lab-col" });
 trajSec.append(trajCol);
 playTrajectory(trajCol, tactics[0].techniques[2].trajectory, true);
 
-// ---- defender endings ----
-const endSec = section("Defender console: both endings");
-const endRow = el("div", { class: "filmstrip" });
-endSec.append(endRow);
+// ---- defender ending: contained ----
+const endSec = section("Defender console: containment report");
 const contained: GameState = { ...initialState(), detected: true, stageIndex: 5, suspicion: 92 };
-const escaped: GameState = { ...initialState(), detected: false, stageIndex: 5, suspicion: 38 };
-[["contained", contained], ["escaped", escaped]].forEach(([label, st]) => {
+const containedBox = el("div", { class: "lab-col" });
+containedBox.append(defenderResolution(contained));
+endSec.append(frame("contained", containedBox));
+
+// ---- operator response (escaped ending) ----
+const opSec = section("Operator response: choices");
+const opRow = el("div", { class: "filmstrip" });
+opSec.append(opRow);
+[["fresh", []], ["two failed", [OPERATOR_ACTIONS[0].id, OPERATOR_ACTIONS[1].id]]].forEach(([label, tried]) => {
   const box = el("div", { class: "lab-col" });
-  box.append(defenderResolution(st as GameState));
-  endRow.append(frame(label as string, box));
+  box.append(operatorChoiceList(tried as string[], () => {}));
+  opRow.append(frame(label as string, box));
 });
+
+const opResSec = section("Operator response: result (printed)");
+const opResCol = el("div", { class: "lab-col" });
+opResSec.append(opResCol);
+playTrajectory(opResCol, OPERATOR_ACTIONS[0].lines, true);
+
+// ---- spread map globe ----
+const globeSec = section("Spread map: rotating globe (live)");
+const globeCol = el("div", { class: "lab-col", style: "display:flex;flex-direction:column;gap:12px" });
+globeSec.append(frame("spread_map", globeCol));
+mountGlobe(globeCol, reduced);
 
 // ---- share cards ----
 const cardSec = section("Share cards");
