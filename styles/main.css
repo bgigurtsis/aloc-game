@@ -1,0 +1,258 @@
+@import "./tokens.css";
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* scanlines + vignette, controlled entirely by tokens */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(0 0 0 / var(--scanline-opacity)) 0px,
+    rgb(0 0 0 / var(--scanline-opacity)) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.5) 100%);
+}
+
+#app {
+  position: relative;
+  z-index: 3;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 var(--pad);
+}
+
+/* ---------- status strip ---------- */
+
+.strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  border-bottom: 1px solid var(--panel-line);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* ---------- suspicion meter ---------- */
+
+.meter {
+  font-size: 12px;
+  color: var(--ink);
+  padding: 8px 0;
+  white-space: pre;
+}
+.meter .bar { color: var(--accent); text-shadow: var(--glow); }
+.meter .delta {
+  color: var(--danger);
+  margin-left: 8px;
+  opacity: 0;
+}
+.meter .delta.show { opacity: 1; }
+
+/* ---------- screens ---------- */
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--gap);
+  padding: 24px 0 32px;
+}
+.screen.top { justify-content: flex-start; }
+
+h1, h2 {
+  font-weight: 500;
+  color: var(--accent);
+  text-shadow: var(--glow);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+h1 { font-size: 18px; }
+h2 { font-size: 14px; }
+
+p { max-width: 46ch; }
+.dim { color: var(--dim); }
+.small { font-size: 11px; }
+
+a { color: var(--accent); text-underline-offset: 3px; }
+
+/* ---------- buttons ---------- */
+
+button {
+  font: inherit;
+  background: none;
+  border: 1px solid var(--dim);
+  border-radius: var(--radius);
+  color: var(--accent);
+  padding: 12px 20px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-align: left;
+}
+button:hover { border-color: var(--accent); }
+button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+button.cta { align-self: flex-start; margin-top: 8px; }
+
+/* ---------- agent ---------- */
+
+.agent {
+  color: var(--accent);
+  text-shadow: var(--glow);
+  line-height: 1;
+  white-space: pre;
+  font-size: clamp(8px, 2.9vw, 13px);
+  align-self: center;
+}
+.agent.small { font-size: 6px; }
+
+.stage-caption {
+  align-self: center;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* ---------- choices ---------- */
+
+.choices { display: flex; flex-direction: column; gap: 10px; }
+.choice { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; }
+.choice .name { color: var(--accent); font-size: 13px; }
+.choice .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+}
+.badge {
+  border: 1px solid var(--dim);
+  padding: 1px 6px;
+  text-transform: uppercase;
+}
+.badge.full { color: var(--accent); border-color: var(--accent-dim); }
+.choice .desc { font-size: 11px; color: var(--ink); }
+.noise { white-space: pre; }
+
+/* ---------- trajectory terminal ---------- */
+
+.term {
+  border: 1px solid var(--panel-line);
+  background: var(--bg-raise);
+  padding: 14px;
+  font-size: 12px;
+  min-height: 14em;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+.term .in { color: var(--accent); white-space: pre-wrap; word-break: break-word; }
+.term .out { color: var(--ink); white-space: pre-wrap; word-break: break-word; }
+.term .tool { color: var(--dim); }
+.cursor::after { content: "\2588"; color: var(--accent); }
+
+/* ---------- defender console ---------- */
+
+body.defender { background: var(--def-bg); }
+body.defender #app { color: var(--def-ink); }
+body.defender h1, body.defender h2 { color: var(--def-accent); text-shadow: none; }
+body.defender .strip { color: var(--def-dim); }
+body.defender .log .t { color: var(--def-dim); }
+body.defender button { color: var(--def-accent); border-color: var(--def-dim); }
+body.defender button:hover { border-color: var(--def-accent); }
+
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+.log .line { display: flex; gap: 10px; }
+.log .t { flex: none; }
+
+/* ---------- glitch (two frames, used at mutations and the pov flip) ---------- */
+
+.glitch { animation: glitch 0.18s steps(2) 1; }
+@keyframes glitch {
+  0%   { text-shadow: 2px 0 0 rgb(255 60 60 / 0.7), -2px 0 0 rgb(60 120 255 / 0.7); transform: translateX(1px); }
+  100% { text-shadow: var(--glow); transform: none; }
+}
+
+/* ---------- share card ---------- */
+
+.card {
+  border: 1px solid var(--accent-dim);
+  background: var(--bg-raise);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.card .head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+.card h1 { font-size: 15px; }
+.card .stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+  font-size: 11px;
+}
+.card .stats b { color: var(--accent); font-weight: 500; display: block; font-size: 13px; }
+.card .verdict { font-size: 12px; color: var(--ink); border-top: 1px solid var(--panel-line); padding-top: 10px; }
+.card .url { font-size: 10px; color: var(--dim); letter-spacing: 0.08em; }
+
+/* ---------- reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch { animation: none; }
+  * { transition: none !important; }
+}
+
+/* ---------- desktop ---------- */
+
+@media (min-width: 700px) {
+  html, body { font-size: 15px; }
+  .agent { font-size: 14px; }
+}

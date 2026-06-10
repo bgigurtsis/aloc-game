@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.DS_Store
+
+.cursor/rules/sudo-fix-verification.mdc
+.cursor/rules/sudo-triage.mdc

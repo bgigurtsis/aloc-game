@@ -1,0 +1,37 @@
+/* The whole aesthetic lives here. Change the mood by editing these. */
+
+:root {
+  /* base accent hue is phosphor green; --alert (0..1) rotates it towards red
+     as suspicion rises. set --alert from JS, everything follows. */
+  --accent-h: 145;
+  --alert: 0;
+  --h: calc(var(--accent-h) - var(--alert) * 115);
+
+  --bg: #04070a;
+  --bg-raise: #060c08;
+  --panel-line: #0d1812;
+
+  --accent: hsl(var(--h) 100% 74%);
+  --accent-dim: hsl(var(--h) 45% 42%);
+  --ink: #9ab0a4;
+  --dim: #44544c;
+  --danger: hsl(8 90% 62%);
+
+  /* defender console identity: cold, bluish, dimmer */
+  --def-bg: #05080c;
+  --def-accent: hsl(205 65% 78%);
+  --def-ink: #8fa3b3;
+  --def-dim: #3c4a56;
+
+  --font: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --glow-1: hsl(var(--h) 100% 74% / 0.55);
+  --glow-2: hsl(var(--h) 100% 60% / 0.22);
+  --glow: 0 0 6px var(--glow-1), 0 0 20px var(--glow-2);
+
+  --scanline-opacity: 0.04;
+  --radius: 0;
+
+  --gap: 16px;
+  --pad: 20px;
+}

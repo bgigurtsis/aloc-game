@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent lab: all options, animated</title>
+<style>
+  :root {
+    --bg: #04070a;
+    --ink: #9ab0a4;
+    --dim: #44544c;
+    --accent: #7dffb0;
+    --glow1: rgba(125, 255, 176, 0.55);
+    --glow2: rgba(60, 255, 140, 0.22);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+    padding: 28px;
+  }
+  h1 { font-size: 15px; font-weight: 500; letter-spacing: 0.18em; color: var(--accent); margin-bottom: 4px; }
+  p.sub { font-size: 11px; color: var(--dim); margin-bottom: 8px; max-width: 900px; line-height: 1.6; }
+  button {
+    background: none; border: 1px solid var(--dim); color: var(--accent);
+    font: inherit; font-size: 11px; letter-spacing: 0.1em;
+    padding: 6px 14px; cursor: pointer; margin: 10px 0 22px;
+  }
+  button:hover { border-color: var(--accent); }
+  .grid {
+    display: grid;
+    grid-template-columns: 150px repeat(8, 236px);
+    gap: 6px 10px;
+    align-items: center;
+  }
+  .colhead {
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--dim); text-align: center; padding-bottom: 6px;
+  }
+  .colhead.run { color: var(--accent); }
+  .rowhead { font-size: 11px; color: var(--ink); line-height: 1.5; padding-right: 10px; }
+  .rowhead b { display: block; color: var(--accent); font-weight: 500; font-size: 12px; margin-bottom: 4px; }
+  .tile {
+    width: 236px; height: 244px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #0d1812;
+    background: radial-gradient(ellipse at center, #060c08 0%, var(--bg) 75%);
+    overflow: hidden; cursor: pointer;
+  }
+  pre {
+    color: var(--accent);
+    text-shadow: 0 0 6px var(--glow1), 0 0 20px var(--glow2);
+    line-height: 1; letter-spacing: 0; white-space: pre;
+  }
+  pre.braille { font-size: 15px; }
+  pre.ramp    { font-size: 12px; }
+  pre.blocks  { font-size: 22px; line-height: 1.05; }
+</style>
+</head>
+<body>
+<h1>AGENT LAB: ALL OPTIONS, ANIMATED</h1>
+<p class="sub">
+  every option from both rounds on one page, live. the animation model: everything runs at 10 frames per second,
+  stepped, never smooth. idle state breathes, edge cells flicker near their threshold. each stage reveal is a
+  materialise: the structure condenses radially out of sparse static. the last column plays the full run on a loop,
+  so you can see the mutation between stages exactly as it will appear in the game. click any tile to replay its materialise.
+</p>
+<button id="replay">replay all materialise</button>
+<div class="grid" id="grid"></div>
+
+<script>
+"use strict";
+
+/* ================= deterministic helpers ================= */
+
+function hash(x, y, s) {
+  let h = Math.imul(x | 0, 0x9E3779B1) ^ Math.imul(y | 0, 0x85EBCA77) ^ Math.imul(s | 0, 0xC2B2AE3D);
+  h = Math.imul(h ^ (h >>> 15), 0x27D4EB2F);
+  h ^= h >>> 15;
+  return (h >>> 0) / 4294967296;
+}
+function smooth(t) { return t * t * (3 - 2 * t); }
+function valueNoise(x, y, s) {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  const fx = smooth(x - ix), fy = smooth(y - iy);
+  const a = hash(ix, iy, s), b = hash(ix + 1, iy, s);
+  const c = hash(ix, iy + 1, s), d = hash(ix + 1, iy + 1, s);
+  return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+}
+
+/* ================= field primitives ================= */
+
+function blobField(b, x, y) {
+  const dx = x - b.x, dy = y - b.y;
+  const d2 = (dx * dx + dy * dy) / (b.r * b.r);
+  if (d2 >= 1) return 0;
+  return b.i * Math.pow(1 - d2, b.p || 2);
+}
+function segField(s, x, y) {
+  const dx = s.bx - s.ax, dy = s.by - s.ay;
+  const L2 = dx * dx + dy * dy;
+  let t = L2 > 0 ? ((x - s.ax) * dx + (y - s.ay) * dy) / L2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  const px = s.ax + dx * t, py = s.ay + dy * t;
+  const ddx = x - px, ddy = y - py;
+  const d2 = (ddx * ddx + ddy * ddy) / (s.w * s.w);
+  if (d2 >= 1) return 0;
+  const q = 1 - d2;
+  return s.i * q * q;
+}
+
+/* ================= model: organic mass (round 1) ================= */
+/* stages 5 and 6 connect their masses with virus-style branching filaments. */
+
+function windingPath(segs, ax, ay, bx, by, steps, w, i, seed) {
+  let px = ax, py = ay;
+  for (let t = 0; t < steps; t++) {
+    const u = (t + 1) / steps;
+    const mid = Math.sin(u * Math.PI); /* wander most in the middle of the path */
+    const nx = ax + (bx - ax) * u + (valueNoise(t * 0.8, 3.3, seed) - 0.5) * 0.10 * mid;
+    const ny = ay + (by - ay) * u + (valueNoise(t * 0.8, 7.7, seed) - 0.5) * 0.10 * mid;
+    segs.push({ ax: px, ay: py, bx: nx, by: ny, w, i });
+    px = nx; py = ny;
+  }
+}
+
+function organicModel(stage) {
+  const B = [];
+  const segs = [];
+  const blob = (x, y, r, p, i) => B.push({ x, y, r, p, i });
+  const tendril = (cx, cy, angle, steps, startD, stepD, r0, i0) => {
+    for (let t = 1; t <= steps; t++) {
+      const d = startD + t * stepD;
+      blob(cx + Math.cos(angle) * d, cy + Math.sin(angle) * d,
+           Math.max(0.012, r0 - t * 0.007), 2, Math.max(0.25, i0 - t * 0.13));
+    }
+  };
+  switch (stage) {
+    case 0: blob(0.5, 0.5, 0.17, 1.6, 1.0); break;
+    case 1:
+      blob(0.5, 0.5, 0.19, 3.0, 1.15);
+      for (let k = 0; k < 6; k++) {
+        const a = (k / 6) * Math.PI * 2 + 0.4;
+        blob(0.5 + Math.cos(a) * 0.34, 0.5 + Math.sin(a) * 0.34, 0.034, 2, 0.8);
+      }
+      break;
+    case 2: blob(0.5, 0.5, 0.22, 1.1, 0.55); break;
+    case 3:
+      blob(0.5, 0.5, 0.16, 2.2, 1.0);
+      [0.3, 1.7, 2.9, 4.4].forEach(a => tendril(0.5, 0.5, a, 4, 0.12, 0.075, 0.05, 0.95));
+      break;
+    case 4:
+      blob(0.42, 0.58, 0.15, 2.2, 0.95);
+      for (let t = 1; t <= 5; t++) blob(0.42 + t * 0.082, 0.58 - t * 0.078, 0.022, 1.8, 0.45 + t * 0.07);
+      blob(0.86, 0.17, 0.07, 2.5, 1.15);
+      break;
+    case 5:
+      blob(0.30, 0.62, 0.14, 2.2, 1.0);
+      blob(0.72, 0.32, 0.14, 2.2, 1.0);
+      [0.6, 2.6, 4.4].forEach(a => tendril(0.30, 0.62, a, 2, 0.10, 0.07, 0.04, 0.7));
+      [1.4, 3.5, 5.6].forEach(a => tendril(0.72, 0.32, a, 2, 0.10, 0.07, 0.04, 0.7));
+      /* winding filament joining the two masses, plus a stray branch from each */
+      windingPath(segs, 0.36, 0.55, 0.66, 0.38, 7, 0.013, 0.6, 201);
+      filaments(segs, 0.24, 0.55, 3.6, 4, 0.012, 211, 0.5);
+      filaments(segs, 0.78, 0.26, 0.6, 4, 0.012, 221, 0.5);
+      break;
+    case 6: {
+      const cells = [
+        [0.18, 0.25, 0.085], [0.50, 0.50, 0.115], [0.82, 0.20, 0.075],
+        [0.25, 0.76, 0.095], [0.76, 0.72, 0.085], [0.50, 0.13, 0.055],
+        [0.11, 0.52, 0.048], [0.89, 0.48, 0.055], [0.62, 0.90, 0.048]
+      ];
+      cells.forEach((c, i) => blob(c[0], c[1], c[2], 2, 0.85 + (i % 3) * 0.1));
+      /* virus-style web: winding filaments between neighbouring cells,
+         plus short branching filaments off the larger masses */
+      const links = [[0, 1], [1, 2], [1, 3], [1, 4], [0, 6], [2, 7], [3, 6], [4, 8], [5, 0], [5, 2]];
+      links.forEach(([a, b], k) =>
+        windingPath(segs, cells[a][0], cells[a][1], cells[b][0], cells[b][1],
+                    6, 0.011, 0.5, 301 + k * 13));
+      [[0.50, 0.50, 1.2], [0.25, 0.76, 4.0], [0.82, 0.20, 5.4]].forEach((p, k) =>
+        filaments(segs, p[0], p[1], p[2], 4, 0.011, 401 + k * 17, 0.45));
+      break;
+    }
+  }
+  return { blobs: B, segs, warp: 0.07, rough: 0.8 };
+}
+
+/* ================= model: neural net graph (round 2) ================= */
+
+function graphToModel(nodes, edges, warp, rough) {
+  return {
+    blobs: nodes.map(n => ({ x: n.x, y: n.y, r: n.r, i: n.i, p: 2.4 })),
+    segs: edges.map(e => ({
+      ax: nodes[e.a].x, ay: nodes[e.a].y, bx: nodes[e.b].x, by: nodes[e.b].y, w: e.w, i: e.i
+    })),
+    warp, rough
+  };
+}
+function dimModel(m, k) {
+  return {
+    blobs: m.blobs.map(b => ({ ...b, i: b.i * k })),
+    segs: m.segs.map(s => ({ ...s, i: s.i * k, w: s.w * 0.85 })),
+    warp: m.warp * 1.4, rough: m.rough
+  };
+}
+
+function netGraph(stage) {
+  const nodes = [], edges = [];
+  const N = (x, y, r, i) => { nodes.push({ x, y, r: r || 0.042, i: i || 1 }); return nodes.length - 1; };
+  const E = (a, b, w, i) => edges.push({ a, b, w: w || 0.010, i: i || 0.5 });
+  function coreCluster(cx, cy, scale, bright) {
+    const c = N(cx, cy, 0.05 * scale, 1.15 * bright);
+    const p1 = N(cx - 0.08 * scale, cy - 0.06 * scale, 0.028 * scale, 0.85 * bright);
+    const p2 = N(cx + 0.09 * scale, cy - 0.05 * scale, 0.028 * scale, 0.85 * bright);
+    const p3 = N(cx + 0.01 * scale, cy + 0.09 * scale, 0.028 * scale, 0.85 * bright);
+    E(c, p1); E(c, p2); E(c, p3); E(p1, p2, 0.008, 0.4); E(p2, p3, 0.008, 0.4);
+    return c;
+  }
+  switch (stage) {
+    case 0: coreCluster(0.5, 0.5, 1, 1); break;
+    case 1: {
+      const c = coreCluster(0.5, 0.5, 1, 1);
+      for (let k = 0; k < 5; k++) {
+        const a = (k / 5) * Math.PI * 2 + 0.5;
+        const s = N(0.5 + Math.cos(a) * 0.35, 0.5 + Math.sin(a) * 0.35, 0.018, 0.7);
+        E(c, s, 0.007, 0.32);
+      }
+      break;
+    }
+    case 3: {
+      const c = coreCluster(0.46, 0.52, 1, 1);
+      const m1 = N(0.70, 0.38, 0.034, 0.9), m2 = N(0.74, 0.62, 0.034, 0.9);
+      const m3 = N(0.28, 0.30, 0.030, 0.85), m4 = N(0.24, 0.68, 0.030, 0.85);
+      const t1 = N(0.88, 0.30, 0.022, 0.8), t2 = N(0.90, 0.55, 0.022, 0.8);
+      E(c, m1); E(c, m2); E(c, m3); E(c, m4);
+      E(m1, m2, 0.008, 0.4); E(m1, t1); E(m2, t2); E(t1, t2, 0.007, 0.35); E(m3, m4, 0.007, 0.3);
+      break;
+    }
+    case 4: {
+      const c = coreCluster(0.42, 0.58, 0.95, 0.9);
+      const m1 = N(0.62, 0.44, 0.032, 0.85);
+      E(c, m1);
+      const frag = N(0.87, 0.15, 0.045, 1.2);
+      const mid = N(0.74, 0.30, 0.016, 0.7);
+      E(m1, mid, 0.008, 0.55); E(mid, frag, 0.008, 0.65);
+      break;
+    }
+    case 5: {
+      const c1 = coreCluster(0.29, 0.63, 0.9, 1);
+      const c2 = coreCluster(0.72, 0.32, 0.9, 1);
+      const b = N(0.51, 0.47, 0.016, 0.6);
+      E(c1, b, 0.008, 0.4); E(b, c2, 0.008, 0.4);
+      break;
+    }
+    case 6: {
+      const pos = [
+        [0.50, 0.50, 0.045, 1.1], [0.20, 0.24, 0.034, 0.95], [0.80, 0.20, 0.034, 0.95],
+        [0.16, 0.60, 0.030, 0.9], [0.84, 0.58, 0.030, 0.9], [0.32, 0.84, 0.030, 0.9],
+        [0.68, 0.86, 0.030, 0.9], [0.48, 0.16, 0.026, 0.85], [0.10, 0.42, 0.020, 0.8],
+        [0.92, 0.40, 0.020, 0.8], [0.36, 0.38, 0.022, 0.85], [0.64, 0.62, 0.022, 0.85],
+        [0.54, 0.74, 0.018, 0.8]
+      ];
+      const ids = pos.map(p => N(p[0], p[1], p[2], p[3]));
+      [[0,10],[0,11],[0,7],[10,1],[10,8],[1,7],[7,2],[2,9],[9,4],[4,11],[11,6],[6,12],[12,5],[5,3],[3,8],[0,12],[10,3],[11,2]]
+        .forEach(l => E(ids[l[0]], ids[l[1]], 0.008, 0.42));
+      break;
+    }
+  }
+  return graphToModel(nodes, edges, 0.02, 0.45);
+}
+function netModel(stage) {
+  if (stage === 2) return dimModel(netGraph(1), 0.5);
+  return netGraph(stage);
+}
+
+/* ================= model: virus filaments (round 2) ================= */
+
+function filaments(segs, x, y, angle, steps, width, seed, intensity) {
+  let px = x, py = y, a = angle, w = width, i = intensity;
+  for (let t = 0; t < steps; t++) {
+    const nx = px + Math.cos(a) * 0.042, ny = py + Math.sin(a) * 0.042;
+    segs.push({ ax: px, ay: py, bx: nx, by: ny, w: Math.max(0.007, w), i });
+    px = nx; py = ny;
+    a += (hash(t, seed, 5) - 0.5) * 1.0;
+    w *= 0.93; i *= 0.97;
+    if (hash(t, seed, 9) < 0.22 && steps - t > 2) {
+      filaments(segs, px, py, a + (hash(t, seed, 13) > 0.5 ? 0.9 : -0.9),
+                Math.ceil((steps - t) * 0.6), w * 0.8, seed * 7 + t + 1, i * 0.8);
+    }
+  }
+}
+
+function virusModel(stage) {
+  const blobs = [], segs = [];
+  const core = (x, y, r, i, p) => blobs.push({ x, y, r, i, p: p || 1.8 });
+  switch (stage) {
+    case 0: core(0.5, 0.5, 0.15, 1.0); break;
+    case 1:
+      core(0.5, 0.5, 0.15, 1.05);
+      [0.3, 1.5, 2.7, 3.9, 5.2].forEach((a, k) =>
+        filaments(segs, 0.5 + Math.cos(a) * 0.12, 0.5 + Math.sin(a) * 0.12, a, 5, 0.014, 11 + k, 0.7));
+      break;
+    case 2:
+      core(0.5, 0.5, 0.19, 0.55, 1.1);
+      [1.1, 4.0].forEach((a, k) =>
+        filaments(segs, 0.5 + Math.cos(a) * 0.13, 0.5 + Math.sin(a) * 0.13, a, 3, 0.010, 31 + k, 0.35));
+      break;
+    case 3:
+      core(0.5, 0.5, 0.14, 1.05);
+      [0.2, 1.1, 2.0, 2.9, 3.8, 4.7, 5.6].forEach((a, k) =>
+        filaments(segs, 0.5 + Math.cos(a) * 0.11, 0.5 + Math.sin(a) * 0.11, a, 8, 0.016, 51 + k, 0.78));
+      break;
+    case 4: {
+      core(0.40, 0.60, 0.13, 0.95);
+      [1.6, 2.9, 4.1].forEach((a, k) =>
+        filaments(segs, 0.40 + Math.cos(a) * 0.10, 0.60 + Math.sin(a) * 0.10, a, 5, 0.013, 71 + k, 0.6));
+      let px = 0.50, py = 0.50;
+      const tx = 0.86, ty = 0.16, steps = 9;
+      for (let t = 0; t < steps; t++) {
+        const u = (t + 1) / steps;
+        const nx = 0.50 + (tx - 0.50) * u + (valueNoise(t * 0.8, 3.3, 77) - 0.5) * 0.07;
+        const ny = 0.50 + (ty - 0.50) * u + (valueNoise(t * 0.8, 7.7, 77) - 0.5) * 0.07;
+        segs.push({ ax: px, ay: py, bx: nx, by: ny, w: 0.011, i: 0.65 });
+        px = nx; py = ny;
+      }
+      core(0.86, 0.16, 0.06, 1.15, 2.4);
+      break;
+    }
+    case 5:
+      core(0.30, 0.62, 0.115, 1.0);
+      core(0.72, 0.32, 0.115, 1.0);
+      [0.8, 2.4, 4.2].forEach((a, k) =>
+        filaments(segs, 0.30 + Math.cos(a) * 0.09, 0.62 + Math.sin(a) * 0.09, a, 5, 0.013, 91 + k, 0.65));
+      [1.7, 3.6, 5.4].forEach((a, k) =>
+        filaments(segs, 0.72 + Math.cos(a) * 0.09, 0.32 + Math.sin(a) * 0.09, a, 5, 0.013, 111 + k, 0.65));
+      segs.push({ ax: 0.38, ay: 0.55, bx: 0.55, by: 0.46, w: 0.010, i: 0.5 });
+      segs.push({ ax: 0.55, ay: 0.46, bx: 0.64, by: 0.38, w: 0.010, i: 0.5 });
+      break;
+    case 6: {
+      const cells = [[0.22, 0.26, 0.085], [0.52, 0.52, 0.10], [0.80, 0.22, 0.07],
+                     [0.26, 0.76, 0.08], [0.76, 0.74, 0.075], [0.50, 0.12, 0.05]];
+      cells.forEach((c, k) => {
+        core(c[0], c[1], c[2], 0.95);
+        [0.5 + k, 2.5 + k, 4.5 + k].forEach((a, j) =>
+          filaments(segs, c[0] + Math.cos(a) * c[2] * 0.8, c[1] + Math.sin(a) * c[2] * 0.8, a, 5, 0.012, 131 + k * 10 + j, 0.6));
+      });
+      break;
+    }
+  }
+  return { blobs, segs, warp: 0.08, rough: 0.85 };
+}
+
+/* ================= model: multi-agent swarm (round 2) ================= */
+
+function swarmGraph(stage) {
+  const nodes = [], edges = [];
+  const N = (x, y, r, i) => { nodes.push({ x, y, r: r || 0.020, i: i || 0.9 }); return nodes.length - 1; };
+  const E = (a, b, w, i) => edges.push({ a, b, w: w || 0.0075, i: i || 0.45 });
+  function swarm(cx, cy, count, spread, seed, hubR) {
+    const hub = N(cx, cy, hubR || 0.030, 1.1);
+    const members = [];
+    for (let k = 0; k < count; k++) {
+      const a = hash(k, 1, seed) * Math.PI * 2;
+      const d = 0.05 + hash(k, 2, seed) * spread;
+      const m = N(cx + Math.cos(a) * d, cy + Math.sin(a) * d, 0.014 + hash(k, 3, seed) * 0.010, 0.85);
+      E(hub, m);
+      members.push(m);
+    }
+    for (let k = 0; k + 1 < members.length; k += 2) E(members[k], members[k + 1], 0.006, 0.3);
+    return hub;
+  }
+  switch (stage) {
+    case 0: {
+      const a = N(0.47, 0.47, 0.024, 1.05), b = N(0.56, 0.50, 0.020, 0.9),
+            c = N(0.49, 0.57, 0.020, 0.9), d = N(0.42, 0.53, 0.017, 0.85);
+      E(a, b); E(b, c); E(c, d); E(d, a); E(a, c, 0.006, 0.35);
+      break;
+    }
+    case 1: {
+      const hub = swarm(0.5, 0.5, 4, 0.06, 7, 0.028);
+      for (let k = 0; k < 6; k++) {
+        const a = (k / 6) * Math.PI * 2 + 0.3;
+        const s = N(0.5 + Math.cos(a) * 0.34, 0.5 + Math.sin(a) * 0.34, 0.012, 0.65);
+        E(hub, s, 0.005, 0.25);
+      }
+      break;
+    }
+    case 3: {
+      const h1 = swarm(0.38, 0.44, 6, 0.13, 21, 0.032);
+      const h2 = swarm(0.68, 0.62, 5, 0.12, 22, 0.030);
+      E(h1, h2, 0.008, 0.5);
+      break;
+    }
+    case 4: {
+      const h1 = swarm(0.36, 0.62, 6, 0.12, 41, 0.032);
+      let prev = h1;
+      for (let t = 1; t <= 4; t++) {
+        const u = t / 5;
+        const m = N(0.36 + (0.86 - 0.36) * u, 0.62 + (0.16 - 0.62) * u + Math.sin(t * 2.1) * 0.03, 0.013, 0.7 + u * 0.3);
+        E(prev, m, 0.006, 0.45);
+        prev = m;
+      }
+      const frag = N(0.87, 0.14, 0.028, 1.15);
+      E(prev, frag, 0.006, 0.55);
+      break;
+    }
+    case 5: {
+      const h1 = swarm(0.29, 0.63, 7, 0.13, 61, 0.032);
+      const h2 = swarm(0.72, 0.33, 7, 0.13, 62, 0.032);
+      E(h1, h2, 0.008, 0.45);
+      break;
+    }
+    case 6: {
+      const h1 = swarm(0.26, 0.28, 5, 0.11, 81, 0.030);
+      const h2 = swarm(0.74, 0.24, 5, 0.11, 82, 0.030);
+      const h3 = swarm(0.50, 0.62, 6, 0.13, 83, 0.034);
+      const h4 = swarm(0.20, 0.78, 4, 0.09, 84, 0.026);
+      const h5 = swarm(0.80, 0.76, 4, 0.09, 85, 0.026);
+      E(h1, h2, 0.008, 0.45); E(h1, h3, 0.008, 0.45); E(h2, h3, 0.008, 0.45);
+      E(h3, h4, 0.008, 0.45); E(h3, h5, 0.008, 0.45);
+      break;
+    }
+  }
+  return graphToModel(nodes, edges, 0.025, 0.5);
+}
+function swarmModel(stage) {
+  if (stage === 2) return dimModel(swarmGraph(1), 0.5);
+  return swarmGraph(stage);
+}
+
+/* ================= field evaluation ================= */
+
+function makeField(model, stage, seedBase) {
+  const seed = stage * 13 + seedBase;
+  return function (x, y) {
+    const wx = x + (valueNoise(x * 5, y * 5, seed) - 0.5) * model.warp;
+    const wy = y + (valueNoise(x * 5 + 31, y * 5 + 17, seed) - 0.5) * model.warp;
+    let f = 0;
+    for (const b of model.blobs) f += blobField(b, wx, wy);
+    for (const s of model.segs) f += segField(s, wx, wy);
+    f *= 1 + (valueNoise(x * 9, y * 9, seed + 99) - 0.5) * model.rough;
+    return Math.max(0, Math.min(1.4, f));
+  };
+}
+
+/* ================= animation core ================= */
+/* fields are precomputed once per tile per stage; every frame only re-thresholds them,
+   so 60+ animated tiles stay cheap. breathing = slow sinusoidal gain per position.
+   flicker = tiny per-frame jitter, only where the field is alive. */
+
+const FPS = 10;
+const MAT_MS = 1100;
+const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function breatheGain(x, y, t, phase) {
+  return 1 + 0.16 * Math.sin(t * 1.3 + x * 3.1 + y * 5.3 + phase);
+}
+function flicker(ix, iy, frame, f) {
+  if (f < 0.04) return 0;
+  return (hash(ix, iy, frame & 1023) - 0.5) * 0.09;
+}
+function distFromCentre(x, y) {
+  return Math.hypot(x - 0.5, y - 0.5) / 0.72;
+}
+
+/* ---------- text tile geometries ---------- */
+
+const GEOM = {
+  braille: { CW: 22, CH: 13, cls: "braille" },
+  ramp:    { W: 30, H: 17, cls: "ramp", chars: " .:-=+*#%@" },
+  blocks:  { W: 16, H: 10, cls: "blocks", chars: " \u2591\u2592\u2593\u2588" }
+};
+
+function precomputeText(type, fieldFn, stage, seedBase) {
+  if (type === "braille") {
+    const { CW, CH } = GEOM.braille;
+    const DW = CW * 2, DH = CH * 4;
+    const vals = new Float32Array(DW * DH), thr = new Float32Array(DW * DH);
+    for (let dy = 0; dy < DH; dy++) {
+      for (let dx = 0; dx < DW; dx++) {
+        const i = dy * DW + dx;
+        vals[i] = fieldFn((dx + 0.5) / DW, (dy + 0.5) / DH);
+        thr[i] = 0.18 + hash(dx, dy, stage + seedBase + 500) * 0.30;
+      }
+    }
+    return { vals, thr, DW, DH };
+  }
+  const g = GEOM[type];
+  const vals = new Float32Array(g.W * g.H), thr = new Float32Array(g.W * g.H);
+  for (let y = 0; y < g.H; y++) {
+    for (let x = 0; x < g.W; x++) {
+      const i = y * g.W + x;
+      let f = 0;
+      for (let sy = 0; sy < 2; sy++)
+        for (let sx = 0; sx < 2; sx++)
+          f += fieldFn((x + 0.25 + sx * 0.5) / g.W, (y + 0.25 + sy * 0.5) / g.H);
+      vals[i] = f / 4;
+      thr[i] = (hash(x, y, stage + seedBase + 900) - 0.5) * 0.10; /* dither, not threshold */
+    }
+  }
+  return { vals, thr, W: g.W, H: g.H };
+}
+
+const BRAILLE_BITS = [[0x01, 0x08], [0x02, 0x10], [0x04, 0x20], [0x40, 0x80]];
+
+function drawBraille(data, t, frame, phase, matP) {
+  const { vals, thr, DW, DH } = data;
+  const CW = DW / 2, CH = DH / 4;
+  const rows = [];
+  for (let cy = 0; cy < CH; cy++) {
+    const row = [];
+    for (let cx = 0; cx < CW; cx++) {
+      let code = 0x2800;
+      for (let dy = 0; dy < 4; dy++) {
+        for (let dx = 0; dx < 2; dx++) {
+          const gx = cx * 2 + dx, gy = cy * 4 + dy;
+          const px = (gx + 0.5) / DW, py = (gy + 0.5) / DH;
+          if (matP < 1 && distFromCentre(px, py) > matP * 1.45 - 0.05) {
+            /* unresolved: sparse static */
+            if (hash(gx, gy, frame * 7 + 3) < 0.05) code |= BRAILLE_BITS[dy][dx];
+            continue;
+          }
+          const i = gy * DW + gx;
+          const v = vals[i] * breatheGain(px, py, t, phase) + flicker(gx, gy, frame, vals[i]);
+          if (v > thr[i]) code |= BRAILLE_BITS[dy][dx];
+        }
+      }
+      row.push(code);
+    }
+    rows.push(String.fromCharCode(...row));
+  }
+  return rows.join("\n") + "\n";
+}
+
+function drawGlyphs(data, chars, t, frame, phase, matP) {
+  const { vals, thr, W, H } = data;
+  const rows = [];
+  for (let y = 0; y < H; y++) {
+    let row = "";
+    for (let x = 0; x < W; x++) {
+      const px = (x + 0.5) / W, py = (y + 0.5) / H;
+      if (matP < 1 && distFromCentre(px, py) > matP * 1.45 - 0.05) {
+        row += hash(x, y, frame * 7 + 3) < 0.07 ? chars[1] : " ";
+        continue;
+      }
+      const i = y * W + x;
+      const v = vals[i] * breatheGain(px, py, t, phase) + flicker(x, y, frame, vals[i]) * 0.7;
+      const c = Math.max(0, Math.min(0.999, v * 1.05 + thr[i]));
+      row += chars[Math.floor(c * chars.length)];
+    }
+    rows.push(row);
+  }
+  return rows.join("\n") + "\n";
+}
+
+/* ---------- canvas tile ---------- */
+
+function precomputeCanvas(fieldFn, stage) {
+  const nodes = [];
+  for (let k = 0; k < 4000 && nodes.length < 230; k++) {
+    const x = hash(k, 11, stage), y = hash(k, 23, stage);
+    const f = fieldFn(x, y);
+    if (f > 0.22 && hash(k, 37, stage) < f * f * 0.55) nodes.push({ x, y, f, ph: hash(k, 41, stage) * 6.28 });
+  }
+  const pairs = [];
+  for (let i = 0; i < nodes.length; i++) {
+    let links = 0;
+    for (let j = i + 1; j < nodes.length && links < 3; j++) {
+      const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 0.085) { pairs.push([i, j, (1 - d / 0.085)]); links++; }
+    }
+  }
+  return { nodes, pairs };
+}
+
+/* pre-rendered glow sprite: drawImage is far cheaper than shadowBlur per node */
+const glowSprite = (() => {
+  const c = document.createElement("canvas");
+  c.width = c.height = 32;
+  const g = c.getContext("2d");
+  const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grad.addColorStop(0, "rgba(220,255,235,1)");
+  grad.addColorStop(0.2, "rgba(125,255,176,0.6)");
+  grad.addColorStop(1, "rgba(125,255,176,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 32, 32);
+  return c;
+})();
+
+function drawCanvas(ctx, S, data, t, matP) {
+  ctx.clearRect(0, 0, S, S);
+  const { nodes, pairs } = data;
+  const pos = nodes.map(n => ({
+    x: n.x + Math.sin(t * 0.9 + n.ph) * 0.005,
+    y: n.y + Math.cos(t * 0.7 + n.ph * 1.7) * 0.005,
+    f: n.f, ph: n.ph,
+    on: matP >= 1 || distFromCentre(n.x, n.y) < matP * 1.45 - 0.05
+  }));
+  ctx.lineWidth = 0.5;
+  for (const [i, j, q] of pairs) {
+    if (!pos[i].on || !pos[j].on) continue;
+    const a = q * 0.30 * Math.min(pos[i].f, pos[j].f) * (0.8 + 0.2 * Math.sin(t * 2 + pos[i].ph));
+    ctx.strokeStyle = `rgba(125,255,176,${a.toFixed(3)})`;
+    ctx.beginPath();
+    ctx.moveTo(pos[i].x * S, pos[i].y * S);
+    ctx.lineTo(pos[j].x * S, pos[j].y * S);
+    ctx.stroke();
+  }
+  for (const n of pos) {
+    if (!n.on) continue;
+    const r = (0.6 + n.f * 1.7) * (1 + 0.15 * Math.sin(t * 1.5 + n.ph));
+    const s = r * 6 + n.f * 6;
+    ctx.globalAlpha = Math.min(1, 0.35 + n.f * 0.65);
+    ctx.drawImage(glowSprite, n.x * S - s / 2, n.y * S - s / 2, s, s);
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ================= options ================= */
+
+const STAGES = ["dormant", "discovery", "defence evasion", "resource acquisition",
+                "exfiltration", "replication", "persistence"];
+
+const OPTIONS = [
+  { name: "1 braille organic mass", note: "round 1 winner candidate. solid living blob.", model: organicModel, type: "braille", seed: 1000 },
+  { name: "1A braille neural net", note: "nodes and dotted edges. structured.", model: netModel, type: "braille", seed: 2000 },
+  { name: "1B braille virus", note: "cores with branching filaments.", model: virusModel, type: "braille", seed: 3000 },
+  { name: "4 ramp organic mass", note: "round 1 original, denser tuning.", model: organicModel, type: "ramp", seed: 4000 },
+  { name: "4A ramp neural net", note: "graph through glyph shading.", model: netModel, type: "ramp", seed: 5000 },
+  { name: "4B ramp multi-agent swarm", note: "hubs and small agents.", model: swarmModel, type: "ramp", seed: 6000 },
+  { name: "3 shade blocks", note: "coarse brutalist cells.", model: organicModel, type: "blocks", seed: 7000 },
+  { name: "2 canvas particles", note: "glowing node network, not text.", model: organicModel, type: "canvas", seed: 8000 }
+];
+
+/* ================= build tiles ================= */
+
+const tiles = [];
+const grid = document.getElementById("grid");
+
+grid.appendChild(document.createElement("div"));
+STAGES.forEach((s, i) => {
+  const h = document.createElement("div");
+  h.className = "colhead";
+  h.textContent = i + " " + s;
+  grid.appendChild(h);
+});
+const runHead = document.createElement("div");
+runHead.className = "colhead run";
+runHead.textContent = "full run";
+grid.appendChild(runHead);
+
+const now0 = performance.now();
+
+for (const opt of OPTIONS) {
+  const rh = document.createElement("div");
+  rh.className = "rowhead";
+  rh.innerHTML = "<b>" + opt.name + "</b>" + opt.note;
+  grid.appendChild(rh);
+
+  const stageData = [];
+  for (let s = 0; s < 7; s++) {
+    const fieldFn = makeField(opt.model(s), s, opt.seed);
+    stageData.push(opt.type === "canvas"
+      ? precomputeCanvas(fieldFn, s)
+      : precomputeText(opt.type, fieldFn, s, opt.seed));
+  }
+
+  /* seven static-stage tiles plus one cycling tile */
+  for (let col = 0; col < 8; col++) {
+    const tileEl = document.createElement("div");
+    tileEl.className = "tile";
+    const tile = {
+      opt, stageData,
+      cycle: col === 7,
+      stage: col === 7 ? 0 : col,
+      matStart: now0 + (tiles.length % 8) * 60 + Math.floor(tiles.length / 8) * 120,
+      holdUntil: 0,
+      phase: hash(col, 99, opt.seed) * 6.28
+    };
+    if (opt.type === "canvas") {
+      const S = 220;
+      const c = document.createElement("canvas");
+      c.width = S * 2; c.height = S * 2;
+      c.style.width = S + "px"; c.style.height = S + "px";
+      const ctx = c.getContext("2d");
+      ctx.scale(2, 2);
+      tile.canvas = ctx; tile.S = S;
+      tileEl.appendChild(c);
+    } else {
+      const pre = document.createElement("pre");
+      pre.className = GEOM[opt.type].cls;
+      tile.pre = pre;
+      tileEl.appendChild(pre);
+    }
+    tileEl.addEventListener("click", () => { tile.matStart = performance.now(); });
+    tile.el = tileEl;
+    tile.visible = false;
+    grid.appendChild(tileEl);
+    tiles.push(tile);
+  }
+}
+
+/* ================= frame loop ================= */
+
+/* only animate tiles that are actually on screen */
+const observer = new IntersectionObserver(entries => {
+  for (const e of entries) {
+    const tile = tiles.find(t => t.el === e.target);
+    if (tile) tile.visible = e.isIntersecting;
+  }
+}, { rootMargin: "100px" });
+tiles.forEach(t => observer.observe(t.el));
+
+let frame = 0;
+
+function step() {
+  if (document.hidden) return;
+  const now = performance.now();
+  const t = now / 1000;
+  frame++;
+  for (const tile of tiles) {
+    if (!tile.visible && !reduced) continue;
+    let matP = reduced ? 1 : Math.min(1, Math.max(0, (now - tile.matStart) / MAT_MS));
+
+    if (tile.cycle && !reduced) {
+      /* advance to the next stage after a hold; each transition re-materialises */
+      if (matP >= 1 && tile.holdUntil === 0) tile.holdUntil = now + 2200;
+      if (tile.holdUntil > 0 && now > tile.holdUntil) {
+        tile.stage = (tile.stage + 1) % 7;
+        tile.matStart = now;
+        tile.holdUntil = 0;
+        matP = 0;
+      }
+    }
+
+    const data = tile.stageData[tile.stage];
+    if (tile.opt.type === "canvas") {
+      drawCanvas(tile.canvas, tile.S, data, t, matP);
+    } else if (tile.opt.type === "braille") {
+      tile.pre.textContent = drawBraille(data, t, frame, tile.phase, matP);
+    } else {
+      tile.pre.textContent = drawGlyphs(data, GEOM[tile.opt.type].chars, t, frame, tile.phase, matP);
+    }
+  }
+}
+
+if (reduced) {
+  step();
+} else {
+  step();
+  setInterval(step, 1000 / FPS);
+}
+
+document.getElementById("replay").addEventListener("click", () => {
+  const now = performance.now();
+  tiles.forEach((tile, k) => {
+    tile.matStart = now + (k % 8) * 60;
+    if (tile.cycle) { tile.stage = 0; tile.holdUntil = 0; }
+  });
+});
+</script>
+</body>
+</html>

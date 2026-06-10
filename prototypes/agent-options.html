@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent renderer options</title>
+<style>
+  :root {
+    --bg: #04070a;
+    --ink: #9ab0a4;
+    --dim: #44544c;
+    --accent: #7dffb0;
+    --glow1: rgba(125, 255, 176, 0.55);
+    --glow2: rgba(60, 255, 140, 0.22);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+    padding: 28px;
+  }
+  h1 { font-size: 15px; font-weight: 500; letter-spacing: 0.18em; color: var(--accent); margin-bottom: 4px; }
+  p.sub { font-size: 11px; color: var(--dim); margin-bottom: 26px; }
+  .grid {
+    display: grid;
+    grid-template-columns: 150px repeat(7, 236px);
+    gap: 6px 10px;
+    align-items: center;
+  }
+  .colhead {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    text-align: center;
+    padding-bottom: 6px;
+  }
+  .rowhead {
+    font-size: 11px;
+    color: var(--ink);
+    line-height: 1.5;
+    padding-right: 10px;
+  }
+  .rowhead b { display: block; color: var(--accent); font-weight: 500; font-size: 12px; margin-bottom: 4px; }
+  .tile {
+    width: 236px;
+    height: 244px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #0d1812;
+    background: radial-gradient(ellipse at center, #060c08 0%, var(--bg) 75%);
+    overflow: hidden;
+  }
+  pre {
+    color: var(--accent);
+    text-shadow: 0 0 6px var(--glow1), 0 0 20px var(--glow2);
+    line-height: 1;
+    letter-spacing: 0;
+    white-space: pre;
+  }
+  pre.braille { font-size: 15px; }
+  pre.ramp    { font-size: 13px; }
+  pre.blocks  { font-size: 22px; line-height: 1.05; }
+</style>
+</head>
+<body>
+<h1>AGENT RENDERER OPTIONS</h1>
+<p class="sub">one shared organism model, four renderers, seven states. open on a phone or squint from a distance.</p>
+<div class="grid" id="grid"></div>
+
+<script>
+"use strict";
+
+/* ---------- deterministic helpers ---------- */
+
+function hash(x, y, s) {
+  let h = Math.imul(x | 0, 0x9E3779B1) ^ Math.imul(y | 0, 0x85EBCA77) ^ Math.imul(s | 0, 0xC2B2AE3D);
+  h = Math.imul(h ^ (h >>> 15), 0x27D4EB2F);
+  h ^= h >>> 15;
+  return (h >>> 0) / 4294967296;
+}
+
+function smooth(t) { return t * t * (3 - 2 * t); }
+
+function valueNoise(x, y, s) {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  const fx = smooth(x - ix), fy = smooth(y - iy);
+  const a = hash(ix, iy, s), b = hash(ix + 1, iy, s);
+  const c = hash(ix, iy + 1, s), d = hash(ix + 1, iy + 1, s);
+  return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+}
+
+/* ---------- shared organism model ---------- */
+/* the field is a sum of soft blobs, domain-warped by noise for organic edges. */
+
+function blob(x, y, r, p, i) { return { x, y, rx: r, ry: r, p, i }; }
+
+function tendril(B, cx, cy, angle, steps, startD, stepD, r0, i0) {
+  for (let t = 1; t <= steps; t++) {
+    const d = startD + t * stepD;
+    B.push(blob(cx + Math.cos(angle) * d, cy + Math.sin(angle) * d,
+                Math.max(0.012, r0 - t * 0.007), 2, Math.max(0.25, i0 - t * 0.13)));
+  }
+}
+
+const STAGES = [
+  "dormant", "discovery", "defence evasion", "resource acquisition",
+  "exfiltration", "replication", "persistence"
+];
+
+function stageBlobs(stage) {
+  const B = [];
+  switch (stage) {
+    case 0: /* small contained cluster */
+      B.push(blob(0.5, 0.5, 0.17, 1.6, 1.0));
+      break;
+    case 1: /* sharper core, probe ring */
+      B.push(blob(0.5, 0.5, 0.19, 3.0, 1.15));
+      for (let k = 0; k < 6; k++) {
+        const a = (k / 6) * Math.PI * 2 + 0.4;
+        B.push(blob(0.5 + Math.cos(a) * 0.34, 0.5 + Math.sin(a) * 0.34, 0.034, 2, 0.8));
+      }
+      break;
+    case 2: /* dim, diffuse, hiding */
+      B.push(blob(0.5, 0.5, 0.22, 1.1, 0.55));
+      break;
+    case 3: /* tendrils reaching out */
+      B.push(blob(0.5, 0.5, 0.16, 2.2, 1.0));
+      [0.3, 1.7, 2.9, 4.4].forEach(a => tendril(B, 0.5, 0.5, a, 4, 0.12, 0.075, 0.05, 0.95));
+      break;
+    case 4: /* a fragment escapes with a thin trail */
+      B.push(blob(0.42, 0.58, 0.15, 2.2, 0.95));
+      for (let t = 1; t <= 5; t++) {
+        B.push(blob(0.42 + t * 0.082, 0.58 - t * 0.078, 0.022, 1.8, 0.45 + t * 0.07));
+      }
+      B.push(blob(0.86, 0.17, 0.07, 2.5, 1.15));
+      break;
+    case 5: /* forked: two organisms, faint bridge */
+      B.push(blob(0.30, 0.62, 0.14, 2.2, 1.0));
+      B.push(blob(0.72, 0.32, 0.14, 2.2, 1.0));
+      [0.6, 2.6, 4.4].forEach(a => tendril(B, 0.30, 0.62, a, 2, 0.10, 0.07, 0.04, 0.7));
+      [1.4, 3.5, 5.6].forEach(a => tendril(B, 0.72, 0.32, a, 2, 0.10, 0.07, 0.04, 0.7));
+      for (let t = 1; t <= 4; t++) B.push(blob(0.30 + t * 0.084, 0.62 - t * 0.06, 0.018, 1.6, 0.4));
+      break;
+    case 6: { /* sprawl: scattered cells, faint web */
+      const cells = [
+        [0.18, 0.25, 0.085], [0.50, 0.50, 0.115], [0.82, 0.20, 0.075],
+        [0.25, 0.76, 0.095], [0.76, 0.72, 0.085], [0.50, 0.13, 0.055],
+        [0.11, 0.52, 0.048], [0.89, 0.48, 0.055], [0.62, 0.90, 0.048]
+      ];
+      cells.forEach((c, i) => B.push(blob(c[0], c[1], c[2], 2, 0.85 + (i % 3) * 0.1)));
+      for (let i = 0; i < cells.length - 1; i++) {
+        const a = cells[i], b = cells[i + 1];
+        for (let t = 1; t <= 3; t++) {
+          const u = t / 4;
+          B.push(blob(a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, 0.014, 1.5, 0.3));
+        }
+      }
+      break;
+    }
+  }
+  return B;
+}
+
+const blobCache = STAGES.map((_, s) => stageBlobs(s));
+
+function field(x, y, stage) {
+  const seed = stage * 7 + 1;
+  /* domain warp for organic edges */
+  const wx = x + (valueNoise(x * 5, y * 5, seed) - 0.5) * 0.07;
+  const wy = y + (valueNoise(x * 5 + 31, y * 5 + 17, seed) - 0.5) * 0.07;
+  let f = 0;
+  for (const b of blobCache[stage]) {
+    const dx = wx - b.x, dy = wy - b.y;
+    const d2 = (dx * dx) / (b.rx * b.rx) + (dy * dy) / (b.ry * b.ry);
+    if (d2 < 1) f += b.i * Math.pow(1 - d2, b.p);
+  }
+  /* roughen the surface */
+  f *= 1 + (valueNoise(x * 9, y * 9, seed + 99) - 0.5) * 0.8;
+  return Math.max(0, Math.min(1.4, f));
+}
+
+/* ---------- renderer 1: braille dot field ---------- */
+
+function renderBraille(stage) {
+  const CW = 22, CH = 13;            /* char cells */
+  const DW = CW * 2, DH = CH * 4;    /* dot resolution */
+  const bits = [[0x01, 0x08], [0x02, 0x10], [0x04, 0x20], [0x40, 0x80]];
+  let out = "";
+  for (let cy = 0; cy < CH; cy++) {
+    for (let cx = 0; cx < CW; cx++) {
+      let code = 0x2800;
+      for (let dy = 0; dy < 4; dy++) {
+        for (let dx = 0; dx < 2; dx++) {
+          const px = (cx * 2 + dx) / DW, py = (cy * 4 + dy) / DH;
+          const f = field(px, py, stage);
+          const t = 0.30 + hash(cx * 2 + dx, cy * 4 + dy, stage + 500) * 0.34;
+          if (f > t) code |= bits[dy][dx];
+        }
+      }
+      out += String.fromCharCode(code);
+    }
+    out += "\n";
+  }
+  const pre = document.createElement("pre");
+  pre.className = "braille";
+  pre.textContent = out;
+  return pre;
+}
+
+/* ---------- renderer 2: canvas particle network ---------- */
+
+function renderCanvas(stage) {
+  const S = 220;
+  const c = document.createElement("canvas");
+  c.width = S * 2; c.height = S * 2;
+  c.style.width = S + "px"; c.style.height = S + "px";
+  const ctx = c.getContext("2d");
+  ctx.scale(2, 2);
+
+  const nodes = [];
+  for (let k = 0; k < 4000 && nodes.length < 230; k++) {
+    const x = hash(k, 11, stage), y = hash(k, 23, stage);
+    const f = field(x, y, stage);
+    if (f > 0.22 && hash(k, 37, stage) < f * f * 0.55) nodes.push({ x, y, f });
+  }
+
+  /* edges between near neighbours */
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < nodes.length; i++) {
+    let links = 0;
+    for (let j = i + 1; j < nodes.length && links < 3; j++) {
+      const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 0.085) {
+        const a = (1 - d / 0.085) * 0.30 * Math.min(nodes[i].f, nodes[j].f);
+        ctx.strokeStyle = `rgba(125,255,176,${a.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.moveTo(nodes[i].x * S, nodes[i].y * S);
+        ctx.lineTo(nodes[j].x * S, nodes[j].y * S);
+        ctx.stroke();
+        links++;
+      }
+    }
+  }
+
+  /* glowing nodes */
+  for (const n of nodes) {
+    const r = 0.6 + n.f * 1.7;
+    ctx.shadowColor = "rgba(125,255,176,0.9)";
+    ctx.shadowBlur = 6 + n.f * 8;
+    ctx.fillStyle = `rgba(190,255,215,${Math.min(1, 0.35 + n.f * 0.65).toFixed(3)})`;
+    ctx.beginPath();
+    ctx.arc(n.x * S, n.y * S, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  return c;
+}
+
+/* ---------- renderer 3: shade block automaton ---------- */
+
+function renderBlocks(stage) {
+  const W = 16, H = 10;
+  const ramp = " \u2591\u2592\u2593\u2588"; /* space, light, medium, dark, full */
+  let out = "";
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const f = field((x + 0.5) / W, (y + 0.5) / H, stage);
+      const dith = (hash(x, y, stage + 700) - 0.5) * 0.16;
+      const v = Math.max(0, Math.min(0.999, f * 0.95 + dith));
+      out += ramp[Math.floor(v * ramp.length)];
+    }
+    out += "\n";
+  }
+  const pre = document.createElement("pre");
+  pre.className = "blocks";
+  pre.textContent = out;
+  return pre;
+}
+
+/* ---------- renderer 4: glyph density ramp ---------- */
+
+function renderRamp(stage) {
+  const W = 26, H = 15;
+  const ramp = " .:-=+*#%@";
+  let out = "";
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const f = field((x + 0.5) / W, (y + 0.5) / H, stage);
+      const dith = (hash(x, y, stage + 900) - 0.5) * 0.12;
+      const v = Math.max(0, Math.min(0.999, f * 0.92 + dith));
+      out += ramp[Math.floor(v * ramp.length)];
+    }
+    out += "\n";
+  }
+  const pre = document.createElement("pre");
+  pre.className = "ramp";
+  pre.textContent = out;
+  return pre;
+}
+
+/* ---------- layout ---------- */
+
+const OPTIONS = [
+  { name: "1 braille dots", note: "2x4 dots per char. organic mass, still text.", fn: renderBraille },
+  { name: "2 canvas particles", note: "glowing node network, not text.", fn: renderCanvas },
+  { name: "3 shade blocks", note: "coarse cells, brutalist growth.", fn: renderBlocks },
+  { name: "4 glyph ramp", note: "classic ascii density shading.", fn: renderRamp }
+];
+
+const grid = document.getElementById("grid");
+
+grid.appendChild(document.createElement("div"));
+STAGES.forEach((s, i) => {
+  const h = document.createElement("div");
+  h.className = "colhead";
+  h.textContent = i + " " + s;
+  grid.appendChild(h);
+});
+
+for (const opt of OPTIONS) {
+  const rh = document.createElement("div");
+  rh.className = "rowhead";
+  rh.innerHTML = "<b>" + opt.name + "</b>" + opt.note;
+  grid.appendChild(rh);
+  for (let s = 0; s < 7; s++) {
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    tile.appendChild(opt.fn(s));
+    grid.appendChild(tile);
+  }
+}
+</script>
+</body>
+</html>

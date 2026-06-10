@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Design lab</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/styles/main.css">
+  <style>
+    #lab { max-width: none; padding: 24px; display: block; }
+    .lab-section { margin-bottom: 36px; }
+    .lab-section > h2 { margin-bottom: 14px; }
+    .filmstrip { display: flex; gap: 12px; flex-wrap: wrap; }
+    .frame {
+      border: 1px solid var(--panel-line);
+      background: radial-gradient(ellipse at center, var(--bg-raise) 0%, var(--bg) 75%);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+    .frame .label { font-size: 10px; color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; }
+    .lab-col { max-width: 560px; }
+  </style>
+</head>
+<body>
+  <div id="app"><div id="lab"></div></div>
+  <script type="module" src="/src/lab.ts"></script>
+</body>
+</html>
