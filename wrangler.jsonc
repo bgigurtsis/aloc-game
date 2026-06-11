@@ -1,0 +1,8 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "aloc-game",
+  "compatibility_date": "2026-06-11",
+  "assets": {
+    "directory": "./dist"
+  }
+}
