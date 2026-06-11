@@ -63,16 +63,7 @@ export class Game {
     const alert = opts.defender ? 0 : Math.min(1, this.state.suspicion / meta.detectionThreshold);
     document.documentElement.style.setProperty("--alert", alert.toFixed(3));
 
-    const beforeFirstTactic = this.state.phase === "cold_open" || this.state.phase === "intro";
-    // Defender screens don't show the agent's stage label.
-    const stageLabel = opts.defender
-      ? ""
-      : beforeFirstTactic
-        ? "dormant"
-        : this.state.stageIndex < tactics.length
-          ? tactics[this.state.stageIndex].tactic
-          : "resolved";
-    this.root.append(statusStrip(stageLabel.toLowerCase(), opts.defender));
+    this.root.append(statusStrip(opts.defender));
     if (opts.meterVisible) this.root.append(meter(this.state.suspicion, this.state.lastDelta));
 
     const screen = el("div", { class: opts.top ? "screen top" : "screen" });
