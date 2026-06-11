@@ -73,7 +73,7 @@ export class Game {
   }
 
   private continueButton(label = "continue"): HTMLElement {
-    const b = el("button", { class: "cta", type: "button", text: `[${label}]` });
+    const b = el("button", { class: "cta", type: "button", text: `[ ${label} ]` });
     b.addEventListener("click", () => this.next());
     return b;
   }
@@ -280,14 +280,14 @@ export class Game {
     capture.catch(() => undefined); // surfaced on tap; avoid an unhandled rejection before it
 
     const hint = el("div", { class: "share-hint" });
-    const share = el("button", { class: "cta", type: "button", text: "[share]" });
+    const share = el("button", { class: "cta", type: "button", text: "[ share ]" });
     share.addEventListener("click", () => void this.handleShare(share, hint, capture));
-    const restart = el("button", { class: "cta", type: "button", text: "[play again]" });
+    const restart = el("button", { class: "cta", type: "button", text: "[ play again ]" });
     restart.addEventListener("click", () => this.dispatch({ type: "restart" }));
 
     screen.append(el("div", { class: "cta-row" }, [share, restart]));
     screen.append(hint);
-    screen.append(el("a", { class: "cta", href: meta.paperUrl, target: "_blank", rel: "noopener", text: "[read the paper]" }));
+    screen.append(el("a", { class: "cta", href: meta.paperUrl, target: "_blank", rel: "noopener", text: "[ read the paper ]" }));
   }
 
   private async handleShare(btn: HTMLButtonElement, hint: HTMLElement, capture: Promise<Blob>): Promise<void> {
