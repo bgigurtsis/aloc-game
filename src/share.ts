@@ -1,4 +1,4 @@
-import { type GameState, type RunStatus, runStatus, tacticReached } from "./state.ts";
+import { type GameState, type RunStatus } from "./state.ts";
 
 // Pure share copy and URL building. No DOM at import or call time, so the
 // whole module runs under node for tests; the DOM-side share flow lives in
@@ -18,14 +18,12 @@ export const STATUS_LABEL: Record<RunStatus, string> = {
   clean: "escaped, clean"
 };
 
-/** The text of the post: status, run stats, and a hook. The link rides alongside. */
+/** The text of the post: outcome plus the final score. The link rides alongside. */
 export function buildShareText(state: GameState): string {
-  const closer = state.detected ? "can you get further?" : "can you contain it?";
-  return [
-    `loss of control — ${STATUS_LABEL[runStatus(state)]}.`,
-    `reached ${tacticReached(state).toLowerCase()}, final suspicion ${state.suspicion}.`,
-    closer
-  ].join(" ");
+  const opener = state.detected
+    ? "I got caught trying to achieve loss of control as an AI agent, can you do better?"
+    : "I achieved full loss of control as an AI agent, can you do the same?";
+  return `${opener}\nFinal suspicion score: ${state.suspicion}`;
 }
 
 /** X post composer pre-filled with text and link (images cannot be attached via URL). */

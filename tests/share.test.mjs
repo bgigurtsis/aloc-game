@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 // share.ts is pure (no DOM at import or call time), so the share text and
 // intent URL builders run directly under node, like the reducer tests.
 const { buildShareText, xIntentUrl, xAppPostUrl, xAndroidIntentUrl, STATUS_LABEL, STATUS_LINE } = await import("../src/share.ts");
-const { initialState, runStatus, tacticReached } = await import("../src/state.ts");
+const { initialState } = await import("../src/state.ts");
 const { meta } = await import("../src/content.ts");
 
 function endState(overrides) {
@@ -15,18 +15,19 @@ const detected = endState({ detected: true, suspicion: meta.detectionThreshold, 
 const clean = endState({ suspicion: 1, stageIndex: 5 });
 const noisy = endState({ suspicion: Math.ceil(meta.detectionThreshold * 0.6), stageIndex: 5 });
 
-test("share text carries the status label for every outcome", () => {
-  for (const state of [detected, clean, noisy]) {
-    assert.ok(buildShareText(state).includes(STATUS_LABEL[runStatus(state)]));
+test("share text reflects the outcome and challenges the reader", () => {
+  for (const state of [clean, noisy]) {
+    assert.ok(buildShareText(state).includes("I achieved full loss of control"));
+    assert.ok(buildShareText(state).includes("can you do the same?"));
   }
+  assert.ok(buildShareText(detected).includes("I got caught"));
+  assert.ok(buildShareText(detected).includes("can you do better?"));
 });
 
-test("share text carries the run stats and a hook", () => {
-  const text = buildShareText(clean);
-  assert.ok(text.includes(tacticReached(clean).toLowerCase()), "tactic reached missing");
-  assert.ok(text.includes(`suspicion ${clean.suspicion}`), "suspicion missing");
-  assert.ok(text.includes("can you contain it?"));
-  assert.ok(buildShareText(detected).includes("can you get further?"));
+test("share text carries the final suspicion score", () => {
+  for (const state of [detected, clean, noisy]) {
+    assert.ok(buildShareText(state).includes(`Final suspicion score: ${state.suspicion}`));
+  }
 });
 
 test("status copy covers every run status", () => {
