@@ -65,14 +65,14 @@ export class Game {
     this.dispatch({ type: "advance" });
   }
 
-  private screen(opts: { meterVisible?: boolean; defender?: boolean; top?: boolean } = {}): HTMLElement {
+  private screen(opts: { meterVisible?: boolean; defender?: boolean; top?: boolean; noHost?: boolean } = {}): HTMLElement {
     clear(this.root);
     document.body.classList.toggle("defender", !!opts.defender);
     // suspicion poisons the palette: map 0..threshold onto --alert 0..1
     const alert = opts.defender ? 0 : Math.min(1, this.state.suspicion / meta.detectionThreshold);
     document.documentElement.style.setProperty("--alert", alert.toFixed(3));
 
-    this.root.append(statusStrip(opts.defender));
+    this.root.append(statusStrip(opts.defender, !opts.noHost));
     if (opts.meterVisible) this.root.append(meter(this.state.suspicion, this.state.lastDelta));
 
     const screen = el("div", { class: opts.top ? "screen top" : "screen" });
@@ -265,7 +265,7 @@ export class Game {
   }
 
   private renderExplainer(): void {
-    const screen = this.screen({ defender: true, top: true });
+    const screen = this.screen({ defender: true, top: true, noHost: true });
     // the escaped headline already landed on the spread map
     if (this.state.detected) screen.append(endingHeadline(this.state));
     screen.append(explainerScreen(this.state));
@@ -273,7 +273,7 @@ export class Game {
   }
 
   private renderShareCard(): void {
-    const screen = this.screen({ defender: true, top: true });
+    const screen = this.screen({ defender: true, top: true, noHost: true });
     screen.append(shareCard(this.state, this.variant));
 
     // capture now, not on tap: the share channels need the tap's transient
