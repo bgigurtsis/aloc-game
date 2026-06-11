@@ -14,13 +14,10 @@ export interface Region {
 
 // Real cloud regions at real coordinates, in spread order.
 export const REGIONS: Region[] = [
-  { id: "us-east-1", place: "N. Virginia", lat: 38.9, lon: -77.5 },
-  { id: "us-west-2", place: "Oregon", lat: 45.8, lon: -119.7 },
   { id: "eu-west-1", place: "Ireland", lat: 53.3, lon: -6.3 },
   { id: "eu-central-1", place: "Frankfurt", lat: 50.1, lon: 8.7 },
   { id: "sa-east-1", place: "S\u00e3o Paulo", lat: -23.5, lon: -46.6 },
   { id: "ap-south-1", place: "Mumbai", lat: 19.1, lon: 72.9 },
-  { id: "ap-southeast-1", place: "Singapore", lat: 1.3, lon: 103.8 },
   { id: "ap-northeast-1", place: "Tokyo", lat: 35.7, lon: 139.7 }
 ];
 
