@@ -2,10 +2,17 @@ import data from "../content/techniques.json" with { type: "json" };
 
 export type Capability = "Full" | "Partial" | "Theoretical" | "Proposed";
 
+export interface UploadStep {
+  dest: string;
+  sizeGib: number;
+  rateMb?: number;
+}
+
 export interface ToolCall {
   tool: string;
   input: string;
-  output: string;
+  output?: string;
+  upload?: UploadStep;
 }
 
 export interface Technique {

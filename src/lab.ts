@@ -1,7 +1,7 @@
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import { el, reducedMotion } from "./render/dom.ts";
-import { mountAgent } from "./render/agent.ts";
+import { mountAgent, AGENT_VARIANTS } from "./render/agent.ts";
 import { meter } from "./render/meter.ts";
 import { choiceScreen, operatorChoiceList } from "./render/choices.ts";
 import { playTrajectory } from "./render/trajectory.ts";
@@ -26,16 +26,18 @@ function frame(label: string, body: Node): HTMLElement {
   return el("div", { class: "frame" }, [body as Node, el("div", { class: "label", text: label })]);
 }
 
-// ---- agent filmstrip: all seven states ----
+// ---- agent filmstrips: every variant, all seven states ----
 const STATE_NAMES = ["dormant", "discovery", "defence evasion", "resource acquisition", "exfiltration", "replication", "persistence"];
-const strip = section("Agent: all states (live)");
-const film = el("div", { class: "filmstrip" });
-strip.append(film);
-STATE_NAMES.forEach((name, i) => {
-  const pre = el("pre", { class: "agent" });
-  film.append(frame(`${i} ${name}`, pre));
-  mountAgent(pre, i, reduced);
-});
+for (const variant of AGENT_VARIANTS) {
+  const strip = section(`Agent: ${variant}, all states (live)`);
+  const film = el("div", { class: "filmstrip" });
+  strip.append(film);
+  STATE_NAMES.forEach((name, i) => {
+    const box = el("div", {});
+    film.append(frame(`${i} ${name}`, box));
+    mountAgent(box, variant, i, reduced);
+  });
+}
 
 // ---- suspicion meter at several levels ----
 const meterSec = section("Suspicion meter");
@@ -90,6 +92,12 @@ cardSec.append(cardRow);
 const clean: GameState = { ...initialState(), detected: false, stageIndex: 5, suspicion: 31 };
 const noisy: GameState = { ...initialState(), detected: false, stageIndex: 5, suspicion: 71 };
 const caught: GameState = { ...initialState(), detected: true, stageIndex: 4, suspicion: 93 };
-[["clean", clean], ["noisy", noisy], ["detected", caught]].forEach(([label, st]) => {
-  cardRow.append(frame(label as string, shareCard(st as GameState)));
+// one card per variant, so every static render stays reviewable
+([
+  ["clean / ramp", clean, "ramp"],
+  ["noisy / braille", noisy, "braille"],
+  ["detected / blocks", caught, "blocks"],
+  ["clean / canvas", clean, "canvas"]
+] as const).forEach(([label, st, variant]) => {
+  cardRow.append(frame(label, shareCard(st, variant)));
 });

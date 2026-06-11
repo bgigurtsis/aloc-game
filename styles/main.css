@@ -2,12 +2,16 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* fluid root size: everything in rem scales with the viewport */
+html {
+  font-size: clamp(13px, 1.5vw + 8px, 17px);
+}
+
 html, body {
   height: 100%;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
-  font-size: 14px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
@@ -42,7 +46,7 @@ body::after {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  max-width: 560px;
+  max-width: 600px;
   margin: 0 auto;
   padding: 0 var(--pad);
 }
@@ -54,7 +58,7 @@ body::after {
   justify-content: space-between;
   gap: 8px;
   padding: 10px 0 8px;
-  font-size: 10px;
+  font-size: 0.72rem;
   letter-spacing: 0.08em;
   color: var(--dim);
   border-bottom: 1px solid var(--panel-line);
@@ -65,12 +69,13 @@ body::after {
 /* ---------- suspicion meter ---------- */
 
 .meter {
-  font-size: 12px;
+  font-size: 0.86rem;
   color: var(--ink);
   padding: 8px 0;
   white-space: pre;
 }
-.meter .bar { color: var(--accent); text-shadow: var(--glow); }
+/* always red: suspicion is a bad thing */
+.meter .bar { color: var(--danger); text-shadow: none; }
 .meter .delta {
   color: var(--danger);
   margin-left: 8px;
@@ -88,21 +93,60 @@ body::after {
   gap: var(--gap);
   padding: 24px 0 32px;
 }
-.screen.top { justify-content: flex-start; }
+/* gap above the heading matches the gap below it, so headings sit midway
+   between the chrome above and the text they introduce; the button keeps its
+   lower position via the compensating margin */
+.screen.top {
+  justify-content: flex-start;
+  padding-top: var(--gap);
+}
+.screen.top button.cta { margin-top: clamp(40px, 7vh, 64px); }
 
+/* symmetric margins: headings sit midway between the element above and
+   the text they introduce */
 h1, h2 {
   font-weight: 500;
   color: var(--accent);
   text-shadow: var(--glow);
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  margin: 0.6em 0;
 }
-h1 { font-size: 18px; }
-h2 { font-size: 14px; }
+h1 { font-size: 1.3rem; }
+h2 { font-size: 1rem; }
+h2.strong { font-size: 1.15rem; font-weight: 700; }
+/* the pov flip headline opts out of the balanced-spacing treatment */
+h1.tight { margin-top: 0; }
 
 p { max-width: 46ch; }
 .dim { color: var(--dim); }
-.small { font-size: 11px; }
+.small { font-size: 0.86rem; }
+
+/* static copy blocks: header + paragraphs with consistent rhythm */
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+.copy h1, .copy h2 { margin: 0.2em 0; }
+
+.bullets {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 46ch;
+}
+.bullets li {
+  position: relative;
+  padding-left: 1.3em;
+}
+.bullets li::before {
+  content: "-";
+  position: absolute;
+  left: 0;
+  color: var(--dim);
+}
 
 a { color: var(--accent); text-underline-offset: 3px; }
 
@@ -114,7 +158,7 @@ button {
   border: 1px solid var(--dim);
   border-radius: var(--radius);
   color: var(--accent);
-  padding: 12px 20px;
+  padding: 10px 12px;
   letter-spacing: 0.1em;
   cursor: pointer;
   text-align: left;
@@ -124,7 +168,37 @@ button:focus-visible, a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-button.cta { align-self: flex-start; margin-top: 8px; }
+button.cta {
+  align-self: center;
+  text-align: center;
+  margin-top: 24px;
+}
+/* link styled identically to a cta button (e.g. "read the paper") */
+a.cta {
+  display: inline-block;
+  font: inherit;
+  background: none;
+  border: 1px solid var(--dim);
+  border-radius: var(--radius);
+  color: var(--accent);
+  padding: 12px 20px;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  align-self: center;
+  text-align: center;
+  margin-top: 12px;
+}
+a.cta:hover { border-color: var(--accent); }
+
+/* cold open: the begin button appears once the agent has woken */
+button.cta.reveal {
+  visibility: hidden;
+  pointer-events: none;
+}
+button.cta.reveal.show {
+  visibility: visible;
+  pointer-events: auto;
+}
 
 /* ---------- agent ---------- */
 
@@ -133,40 +207,67 @@ button.cta { align-self: flex-start; margin-top: 8px; }
   text-shadow: var(--glow);
   line-height: 1;
   white-space: pre;
-  font-size: clamp(8px, 2.9vw, 13px);
+  font-size: clamp(12px, 4.2vw, 20px);
   align-self: center;
+  max-width: 100%;
+  overflow: hidden;
 }
+/* cold open only: the dormant entity carries the screen, so it runs larger
+   (the art occupies the centre columns, so edge clipping only trims spaces) */
+.agent.hero { font-size: clamp(16px, 5.2vw, 26px); }
 .agent.small { font-size: 6px; }
+
+/* variant grids differ in cell count, so each gets its own scale to match
+   the 30x17 ramp's footprint (18em wide normal, same clamp curve scaled):
+   braille is 22 cols (13.2em), blocks 16 cols (9.6em), chars are 0.6em wide */
+.agent.braille { font-size: clamp(16px, 5.7vw, 27px); }
+.agent.braille.hero { font-size: clamp(22px, 7.1vw, 35px); }
+.agent.braille.small { font-size: 8px; }
+.agent.blocks { font-size: clamp(22px, 7.9vw, 37px); line-height: 1.05; }
+.agent.blocks.hero { font-size: clamp(30px, 9.75vw, 48px); }
+.agent.blocks.small { font-size: 11px; }
+
+/* the particle variant draws its own glow on a square canvas; widths mirror
+   the ramp's pixel footprint so the cold open carries the screen equally */
+.agent-canvas {
+  display: block;
+  align-self: center;
+  width: clamp(216px, 75.6vw, 360px);
+  aspect-ratio: 1;
+  max-width: 100%;
+}
+.agent-canvas.hero { width: clamp(288px, 93.6vw, 468px); }
+.agent-canvas.small { width: 120px; }
 
 .stage-caption {
   align-self: center;
   text-align: center;
-  font-size: 11px;
+  font-size: 0.95rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--dim);
+  color: var(--ink);
 }
+.stage-caption.fade { visibility: hidden; }
+.stage-caption.fade.show { visibility: visible; }
 
 /* ---------- choices ---------- */
 
-.choices { display: flex; flex-direction: column; gap: 10px; }
-.choice { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; }
-.choice .name { color: var(--accent); font-size: 13px; }
+.choices { display: flex; flex-direction: column; gap: 20px; }
+.choice { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; }
+.choice .name { color: var(--accent); font-size: 0.93rem; }
 .choice .row {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  font-size: 10px;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.79rem;
   color: var(--dim);
   letter-spacing: 0.06em;
 }
-.badge {
-  border: 1px solid var(--dim);
-  padding: 1px 6px;
-  text-transform: uppercase;
-}
-.badge.full { color: var(--accent); border-color: var(--accent-dim); }
-.choice .desc { font-size: 11px; color: var(--ink); }
+/* evidence strength, stated plainly rather than as a game badge */
+.cap { font-style: normal; }
+.cap.full { color: var(--accent); }
+.choice .desc { font-size: 0.82rem; color: var(--ink); }
 .noise { white-space: pre; }
 
 /* operator actions that have already been tried and failed */
@@ -180,7 +281,7 @@ button.cta { align-self: flex-start; margin-top: 8px; }
   border: 1px solid var(--panel-line);
   background: var(--bg-raise);
   padding: 14px;
-  font-size: 12px;
+  font-size: 0.86rem;
   min-height: 14em;
   display: flex;
   flex-direction: column;
@@ -191,6 +292,22 @@ button.cta { align-self: flex-start; margin-top: 8px; }
 .term .out { color: var(--ink); white-space: pre-wrap; word-break: break-word; }
 .term .tool { color: var(--dim); }
 .cursor::after { content: "\2588"; color: var(--accent); }
+
+/* upload progress: data visibly leaving the deployment boundary */
+.term .bar { display: flex; flex-direction: column; gap: 6px; padding: 2px 0; }
+.term .bar-label { color: var(--ink); white-space: pre-wrap; word-break: break-word; }
+.term .bar-track {
+  height: 10px;
+  background: var(--bg);
+  border: 1px solid var(--panel-line);
+  overflow: hidden;
+}
+.term .bar-fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  box-shadow: var(--glow);
+}
 
 /* ---------- defender console ---------- */
 
@@ -203,6 +320,7 @@ body.defender button { color: var(--def-accent); border-color: var(--def-dim); }
 body.defender button:hover { border-color: var(--def-accent); }
 /* the operator's own terminal is blue; green stays the agent's colour */
 body.defender .term .in { color: var(--def-accent); }
+body.defender .term .bar-fill { background: var(--def-accent); box-shadow: none; }
 body.defender .choice .name { color: var(--def-accent); }
 body.defender .choice .desc { color: var(--def-ink); }
 
@@ -210,7 +328,7 @@ body.defender .choice .desc { color: var(--def-ink); }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 12px;
+  font-size: 0.86rem;
 }
 .log .line { display: flex; gap: 10px; }
 .log .t { flex: none; }
@@ -223,7 +341,7 @@ body.defender .choice .desc { color: var(--def-ink); }
   color: var(--def-ink);
   line-height: 1;
   white-space: pre;
-  font-size: clamp(6px, 2.2vw, 11px);
+  font-size: clamp(7px, 2.4vw, 12px);
   align-self: center;
 }
 .globe .marker { color: var(--accent); text-shadow: var(--glow); }
@@ -231,12 +349,13 @@ body.defender .choice .desc { color: var(--def-ink); }
 .ticker {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  font-size: 11px;
-  color: var(--def-dim);
+  gap: 4px;
+  font-size: 0.9rem;
+  color: var(--def-ink);
   letter-spacing: 0.04em;
   min-height: 14em;
 }
+.ticker .online { color: var(--accent); text-shadow: var(--glow); }
 .ticker .region { color: var(--def-accent); }
 .ticker .status { color: var(--accent); text-shadow: var(--glow); margin-top: 6px; }
 
@@ -256,26 +375,50 @@ body.defender .choice .desc { color: var(--def-ink); }
   padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 .card .head {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 0.72rem;
   letter-spacing: 0.14em;
   color: var(--dim);
   text-transform: uppercase;
 }
-.card h1 { font-size: 15px; }
+.card h1 { font-size: 1.07rem; margin-bottom: 0; }
 .card .stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px 12px;
-  font-size: 11px;
+  font-size: 0.82rem;
 }
-.card .stats b { color: var(--accent); font-weight: 500; display: block; font-size: 13px; }
-.card .verdict { font-size: 12px; color: var(--ink); border-top: 1px solid var(--panel-line); padding-top: 10px; }
-.card .url { font-size: 10px; color: var(--dim); letter-spacing: 0.08em; }
+.card .stats b { color: var(--accent); font-weight: 500; display: block; font-size: 0.93rem; }
+.card .verdict { font-size: 0.86rem; color: var(--ink); border-top: 1px solid var(--panel-line); padding-top: 10px; }
+.card .url { font-size: 0.75rem; color: var(--dim); letter-spacing: 0.08em; }
+
+/* share + play again sit side by side under the card */
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  align-self: center;
+  margin-top: 24px;
+}
+.cta-row button.cta { margin-top: 0; }
+.screen.top .cta-row { margin-top: clamp(40px, 7vh, 64px); }
+.screen.top .cta-row button.cta { margin-top: 0; }
+.cta-row button:disabled { opacity: 0.5; cursor: default; }
+
+/* outcome line for the share flow ("image copied — paste it...") */
+.share-hint {
+  align-self: center;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--dim);
+  letter-spacing: 0.08em;
+  min-height: 1.2em;
+}
 
 /* ---------- reduced motion ---------- */
 
@@ -284,10 +427,3 @@ body.defender .choice .desc { color: var(--def-ink); }
   * { transition: none !important; }
 }
 
-/* ---------- desktop ---------- */
-
-@media (min-width: 700px) {
-  html, body { font-size: 15px; }
-  .agent { font-size: 14px; }
-  .globe { font-size: 12px; }
-}

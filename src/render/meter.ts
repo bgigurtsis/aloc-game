@@ -16,7 +16,7 @@ export function meter(suspicion: number, delta: number): HTMLElement {
   }
 
   const wrap = el("div", { class: "meter" }, [
-    el("span", { text: "suspicion " }),
+    el("span", { text: "suspicion score " }),
     el("span", { class: "bar", text: `[${bar}]` }),
     el("span", { text: ` ${String(suspicion).padStart(2, " ")}` })
   ]);

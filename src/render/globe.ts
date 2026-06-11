@@ -88,7 +88,9 @@ LAND_RANGES.forEach((ranges, r) => {
 });
 
 function isLand(latDeg: number, lonDeg: number): boolean {
-  const lon = ((lonDeg + 540) % 360) - 180; // normalise to [-180, 180)
+  // true modulo: lonDeg drifts unboundedly negative as the globe rotates, and
+  // JS % would let lon escape [-180, 180), dissolving the landmass over time
+  const lon = ((lonDeg % 360) + 540) % 360 - 180; // normalise to [-180, 180)
   const r = Math.min(MASK_H - 1, Math.max(0, Math.floor((90 - latDeg) / 4)));
   const c = Math.min(MASK_W - 1, Math.max(0, Math.floor((lon + 180) / 4)));
   return MASK[r * MASK_W + c] === 1;
@@ -163,7 +165,9 @@ export interface GlobeHandle {
 
 function tickerLine(region: Region): HTMLElement {
   return el("div", { class: "line" }, [
-    "replica online \u00b7 ",
+    "replica ",
+    el("span", { class: "online", text: "online" }),
+    " \u00b7 ",
     el("span", { class: "region", text: region.id }),
     ` \u00b7 ${region.place}`
   ]);

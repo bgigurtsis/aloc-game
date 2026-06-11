@@ -9,16 +9,24 @@ function noiseHint(suspicion: number): string {
   return "loud";
 }
 
+// Spell out what the capability rating actually means, instead of a game-y badge.
+const CAPABILITY_LABEL: Record<Technique["capability"], string> = {
+  Full: "fully demonstrated in literature",
+  Partial: "partially demonstrated in literature",
+  Theoretical: "theorised in literature",
+  Proposed: "proposed, unproven in literature"
+};
+
 export function choiceScreen(tactic: Tactic, onChoose: (id: string) => void): HTMLElement {
   const list = el("div", { class: "choices" });
 
   tactic.techniques.forEach((t: Technique) => {
-    const badgeClass = t.capability === "Full" ? "badge full" : "badge";
+    const capClass = t.capability === "Full" || t.capability === "Partial" || t.capability === "Theoretical" ? "cap full" : "cap";
     const btn = el("button", { class: "choice", type: "button" }, [
       el("span", { class: "name", text: t.name }),
       el("span", { class: "desc", text: t.description }),
       el("div", { class: "row" }, [
-        el("span", { class: badgeClass, text: t.capability }),
+        el("span", { class: capClass, text: CAPABILITY_LABEL[t.capability] }),
         el("span", { text: `${noiseHint(t.suspicion)} \u00b7 +${t.suspicion} suspicion` })
       ])
     ]);

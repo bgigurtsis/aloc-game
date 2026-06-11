@@ -14,14 +14,14 @@
   --accent: hsl(var(--h) 100% 74%);
   --accent-dim: hsl(var(--h) 45% 42%);
   --ink: #9ab0a4;
-  --dim: #44544c;
+  --dim: #5a6e63;
   --danger: hsl(8 90% 62%);
 
   /* defender console identity: cold, bluish, dimmer */
   --def-bg: #05080c;
   --def-accent: hsl(205 65% 78%);
   --def-ink: #8fa3b3;
-  --def-dim: #3c4a56;
+  --def-dim: #51626e;
 
   --font: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
@@ -32,6 +32,6 @@
   --scanline-opacity: 0.04;
   --radius: 0;
 
-  --gap: 16px;
-  --pad: 20px;
+  --gap: clamp(14px, 2.5vw, 20px);
+  --pad: clamp(16px, 4vw, 24px);
 }

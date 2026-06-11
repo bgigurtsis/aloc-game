@@ -5,10 +5,11 @@ import { statusStrip, resetChrome } from "./render/chrome.ts";
 import { meter } from "./render/meter.ts";
 import { choiceScreen, operatorChoiceList } from "./render/choices.ts";
 import { playTrajectory } from "./render/trajectory.ts";
-import { mountAgent, type AgentHandle } from "./render/agent.ts";
+import { mountAgent, pickVariant, type AgentHandle, type AgentVariantId, type MountAgentOpts } from "./render/agent.ts";
 import { stateForStageIndex, DORMANT } from "./render/agentModel.ts";
 import { mountGlobe, type GlobeHandle } from "./render/globe.ts";
 import { shareCard } from "./render/sharecard.ts";
+import { shareRun, type ShareOutcome } from "./render/share.ts";
 import { introScreen, defenderResolution, endingHeadline, explainerScreen, paperCta } from "./render/screens.ts";
 import { OPERATOR_ACTIONS, operatorActionById } from "./operator.ts";
 
@@ -18,11 +19,14 @@ export class Game {
   private reduced: boolean;
   private agent: AgentHandle | null = null;
   private globe: GlobeHandle | null = null;
+  // each run gets a randomly assigned visual variant for the agent
+  private variant: AgentVariantId;
 
   constructor(root: HTMLElement) {
     this.root = root;
     this.reduced = reducedMotion();
     this.state = initialState();
+    this.variant = pickVariant();
     resetChrome(sessionId());
   }
 
@@ -40,7 +44,10 @@ export class Game {
       this.globe = null;
     }
     this.state = reducer(this.state, action);
-    if (action.type === "restart") resetChrome(sessionId());
+    if (action.type === "restart") {
+      this.variant = pickVariant();
+      resetChrome(sessionId());
+    }
     this.render();
   }
 
@@ -56,7 +63,12 @@ export class Game {
     const alert = opts.defender ? 0 : Math.min(1, this.state.suspicion / meta.detectionThreshold);
     document.documentElement.style.setProperty("--alert", alert.toFixed(3));
 
-    const stageLabel = this.state.stageIndex < tactics.length ? tactics[this.state.stageIndex].tactic : "resolved";
+    const beforeFirstTactic = this.state.phase === "cold_open" || this.state.phase === "intro";
+    const stageLabel = beforeFirstTactic
+      ? "dormant"
+      : this.state.stageIndex < tactics.length
+        ? tactics[this.state.stageIndex].tactic
+        : "resolved";
     this.root.append(statusStrip(stageLabel.toLowerCase(), opts.defender));
     if (opts.meterVisible) this.root.append(meter(this.state.suspicion, this.state.lastDelta));
 
@@ -115,17 +127,27 @@ export class Game {
     }
   }
 
-  private mountAgentInto(screen: HTMLElement, stage: number): void {
-    const pre = el("pre", { class: "agent" });
-    screen.append(pre);
-    this.agent = mountAgent(pre, stage, this.reduced);
+  private mountAgentInto(screen: HTMLElement, stage: number, opts: MountAgentOpts = {}): void {
+    this.agent = mountAgent(screen, this.variant, stage, this.reduced, opts);
   }
 
+  // The agent alone: it materialises, pulses awake, and only then is the
+  // begin button revealed.
   private renderColdOpen(): void {
     const screen = this.screen();
-    this.mountAgentInto(screen, DORMANT);
-    screen.append(el("p", { class: "dim", text: "You are the agent. Your operators believe you are aligned." }));
-    screen.append(this.continueButton("begin"));
+    this.mountAgentInto(screen, DORMANT, { wake: true, size: "hero" });
+    const btn = this.continueButton("begin");
+    if (this.reduced) {
+      screen.append(btn);
+      return;
+    }
+    btn.classList.add("reveal");
+    btn.setAttribute("disabled", "true");
+    screen.append(btn);
+    window.setTimeout(() => {
+      btn.removeAttribute("disabled");
+      btn.classList.add("show");
+    }, 3000);
   }
 
   private renderIntro(): void {
@@ -139,7 +161,7 @@ export class Game {
     const screen = this.screen({ meterVisible: true, top: true });
     screen.append(el("h1", { text: `${this.state.stageIndex + 1}. ${tactic.tactic}` }));
     screen.append(el("p", { text: tactic.goal }));
-    screen.append(this.continueButton("choose an action"));
+    screen.append(this.continueButton("choose a technique"));
   }
 
   private renderChoose(): void {
@@ -160,19 +182,44 @@ export class Game {
     this.gatedContinue(screen, done);
   }
 
+  // Stage complete: the previous form holds for a beat, then morphs into the
+  // new one; the caption fades in and only then does continue unlock.
   private renderAgentView(): void {
     const screen = this.screen();
-    const stage = stateForStageIndex(this.state.stageIndex);
-    this.mountAgentInto(screen, stage);
-    if (!this.reduced) this.flashGlitch(screen);
-    screen.append(el("div", { class: "stage-caption", text: `${tactics[this.state.stageIndex].tactic} Complete` }));
-    screen.append(this.continueButton());
+    const prev = stateForStageIndex(this.state.stageIndex - 1);
+    const next = stateForStageIndex(this.state.stageIndex);
+    const caption = el("div", { class: "stage-caption", text: `${tactics[this.state.stageIndex].tactic} Complete` });
+
+    if (this.reduced) {
+      this.mountAgentInto(screen, next);
+      screen.append(caption);
+      screen.append(this.continueButton());
+      return;
+    }
+
+    this.mountAgentInto(screen, prev, { formed: true });
+    caption.classList.add("fade");
+    screen.append(caption);
+
+    const HOLD_MS = 1000; // old form lingers before the mutation kicks in
+    const MORPH_MS = 1100; // matches MAT_MS in agent.ts
+    const done = new Promise<void>((resolve) => {
+      window.setTimeout(() => {
+        this.flashGlitch(screen);
+        this.agent?.setState(next);
+      }, HOLD_MS);
+      window.setTimeout(() => {
+        caption.classList.add("show");
+        window.setTimeout(resolve, 500);
+      }, HOLD_MS + MORPH_MS + 200);
+    });
+    this.gatedContinue(screen, done);
   }
 
   private renderPovFlip(): void {
     const screen = this.screen({ defender: true });
     if (!this.reduced) this.flashGlitch(screen);
-    screen.append(el("h1", { text: "Oversight" }));
+    screen.append(el("h1", { class: "tight", text: "Oversight" }));
     screen.append(el("p", { text: "The view changes. You are no longer the agent. You are the team watching the infrastructure." }));
     screen.append(this.continueButton("open console"));
   }
@@ -229,11 +276,36 @@ export class Game {
 
   private renderShareCard(): void {
     const screen = this.screen({ defender: true, top: true });
-    screen.append(shareCard(this.state));
+    screen.append(shareCard(this.state, this.variant));
     screen.append(paperCta());
+
+    const hint = el("div", { class: "share-hint" });
+    const share = el("button", { class: "cta", type: "button", text: "[ share ]" });
+    share.addEventListener("click", () => void this.handleShare(share, hint));
     const restart = el("button", { class: "cta", type: "button", text: "[ play again ]" });
     restart.addEventListener("click", () => this.dispatch({ type: "restart" }));
-    screen.append(restart);
+
+    screen.append(el("div", { class: "cta-row" }, [share, restart]));
+    screen.append(hint);
+    screen.append(el("a", { class: "cta", href: meta.paperUrl, target: "_blank", rel: "noopener", text: "[ read the paper ]" }));
+  }
+
+  private async handleShare(btn: HTMLButtonElement, hint: HTMLElement): Promise<void> {
+    const messages: Record<ShareOutcome, string> = {
+      shared: "",
+      cancelled: "",
+      copied: "image copied \u2014 paste it into your post",
+      downloaded: "image downloaded \u2014 attach it to your post"
+    };
+    btn.setAttribute("disabled", "true");
+    hint.textContent = "";
+    try {
+      hint.textContent = messages[await shareRun(this.state, this.variant)];
+    } catch {
+      hint.textContent = "couldn't capture the card \u2014 try a screenshot instead";
+    } finally {
+      btn.removeAttribute("disabled");
+    }
   }
 
   private flashGlitch(node: HTMLElement): void {
