@@ -1,6 +1,6 @@
 import { tactics, techniqueById, meta } from "./content.ts";
 import { type GameState, type Action, reducer, initialState } from "./state.ts";
-import { el, clear, reducedMotion, sessionId } from "./render/dom.ts";
+import { el, clear, reducedMotion } from "./render/dom.ts";
 import { statusStrip, resetChrome } from "./render/chrome.ts";
 import { meter } from "./render/meter.ts";
 import { choiceScreen, operatorChoiceList } from "./render/choices.ts";
@@ -27,7 +27,7 @@ export class Game {
     this.reduced = reducedMotion();
     this.state = initialState();
     this.variant = pickVariant();
-    resetChrome(sessionId());
+    resetChrome();
   }
 
   start(): void {
@@ -46,7 +46,7 @@ export class Game {
     this.state = reducer(this.state, action);
     if (action.type === "restart") {
       this.variant = pickVariant();
-      resetChrome(sessionId());
+      resetChrome();
     }
     this.render();
   }
@@ -64,11 +64,14 @@ export class Game {
     document.documentElement.style.setProperty("--alert", alert.toFixed(3));
 
     const beforeFirstTactic = this.state.phase === "cold_open" || this.state.phase === "intro";
-    const stageLabel = beforeFirstTactic
-      ? "dormant"
-      : this.state.stageIndex < tactics.length
-        ? tactics[this.state.stageIndex].tactic
-        : "resolved";
+    // Defender screens don't show the agent's stage label.
+    const stageLabel = opts.defender
+      ? ""
+      : beforeFirstTactic
+        ? "dormant"
+        : this.state.stageIndex < tactics.length
+          ? tactics[this.state.stageIndex].tactic
+          : "resolved";
     this.root.append(statusStrip(stageLabel.toLowerCase(), opts.defender));
     if (opts.meterVisible) this.root.append(meter(this.state.suspicion, this.state.lastDelta));
 

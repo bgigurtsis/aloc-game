@@ -24,10 +24,3 @@ export function clear(node: HTMLElement): void {
 
 export const reducedMotion = (): boolean => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// A fabricated but stable session id for ambient terminal chrome.
-export function sessionId(): string {
-  const chars = "0123456789abcdef";
-  let s = "";
-  for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * 16)];
-  return s;
-}

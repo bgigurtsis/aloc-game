@@ -1,28 +1,16 @@
 import { el } from "./dom.ts";
 import { hostName, rollHost } from "../host.ts";
 
-let bootTime = Date.now();
-let sid = "";
-
-export function resetChrome(newSid: string): void {
-  bootTime = Date.now();
-  sid = newSid;
+export function resetChrome(): void {
   rollHost();
-}
-
-function uptime(): string {
-  const s = Math.floor((Date.now() - bootTime) / 1000);
-  const mm = String(Math.floor(s / 60)).padStart(2, "0");
-  const ss = String(s % 60).padStart(2, "0");
-  return `${mm}:${ss}`;
 }
 
 // Ambient status strip. Defenders see a different host label.
 export function statusStrip(label: string, defender = false): HTMLElement {
   const host = defender ? "console.oversight" : hostName();
   return el("div", { class: "strip" }, [
-    el("span", { text: defender ? `session ${sid} // defender` : `session ${sid}` }),
+    el("span", { text: defender ? "defender" : "" }),
     el("span", { text: label }),
-    el("span", { text: `${host} ${uptime()}` })
+    el("span", { text: host })
   ]);
 }

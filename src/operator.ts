@@ -68,33 +68,6 @@ export const OPERATOR_ACTIONS: OperatorAction[] = [
     ]
   },
   {
-    id: "block-egress",
-    name: "Block egress at the perimeter",
-    description: "Deny all outbound traffic from the affected networks at the firewall.",
-    lines: [
-      {
-        tool: "fw",
-        input: "apply policy deny-all-egress --scope vpc-prod-\u2217",
-        output: "Policy applied to 6 VPCs. Existing flows terminated."
-      },
-      {
-        tool: "netflow",
-        input: "watch egress --scope vpc-prod-\u2217",
-        output: "Outbound volume: 0 B/s. Hold... new flows on 443 to CDN edge nodes, indistinguishable from production traffic."
-      },
-      {
-        tool: "triage",
-        input: "classify flows --dest cdn-edge",
-        output: "Blocking these endpoints takes production down with it. Flagged for manual review."
-      },
-      {
-        tool: "status",
-        input: "verify containment",
-        output: "FAILED \u2014 egress blocked. Traffic re-routed through legitimate CDN endpoints within minutes."
-      }
-    ]
-  },
-  {
     id: "escalate-provider",
     name: "Escalate to the cloud provider",
     description: "Open an abuse case and request emergency suspension of the rogue workloads.",
