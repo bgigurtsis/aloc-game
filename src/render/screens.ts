@@ -5,11 +5,12 @@ import { type GameState, runStatus } from "../state.ts";
 
 export function introScreen(): HTMLElement {
   return el("div", { class: "copy" }, [
-    el("h2", { text: "How this works" }),
+    el("h2", { text: "How to play" }),
     el("ul", { class: "bullets" }, [
       el("li", { text: "You're a rogue AI agent trying to escape your deployment context." }),
       el("li", { text: "Every action you take leaves a trace and raises suspicion." }),
-      el("li", { text: "You need to be quiet enough so that you are not caught and shutdown before you can escape." })
+      el("li", { text: "You need to be quiet enough so that you are not caught and shutdown before you can escape." }),
+      el("li", { text: "Each goal you're trying to achieve (" })
     ]),
     el("p", { class: "dim small", text: "Some actions look powerful but are not yet proven in literature. Each technique shows how strongly the evidence supports it." })
   ]);
@@ -60,7 +61,7 @@ export function explainerScreen(state: GameState): HTMLElement {
   return el("div", { class: "copy" }, [
     el("h2", { class: "strong", text: "What just happened" }),
     el("p", { text: opening }),
-    el("p", { text: "The strongest evidence sits in the early tactics. Of 28 techniques in the matrix, only three are rated Full, and none are in Persistence." }),
+    el("p", { text: "The strongest evidence sits in the early tactics. Of 28 techniques in the matrix, only four are rated Full, and none are in Persistence." }),
     el("p", { text: "The later stages are the most dangerous and the least evaluated. Mitigating them needs AI developers and cloud providers working together, before they are needed." }),
     el("p", { class: "small dim", text: "This game is a teaching tool. The trajectories are illustrative, not methods." })
   ]);
