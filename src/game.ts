@@ -296,9 +296,9 @@ export class Game {
   private formsHint(): string {
     const total = AGENT_VARIANTS.length;
     const seen = seenVariantCount();
-    if (seen >= total) return `you've encountered all ${total} entity forms`;
-    if (seen > 0) return `you've encountered ${seen} of ${total} entity forms \u2014 play again to meet another`;
-    return "the entity takes a different form each run \u2014 play again to meet another";
+    if (seen >= total) return `you've encountered all ${total} agent forms`;
+    if (seen > 0) return `you've encountered ${seen} of ${total} agent forms, play again to meet another`;
+    return "the agent takes a different form each run, play again to meet another";
   }
 
   private async handleShare(btn: HTMLButtonElement, hint: HTMLElement, capture: Promise<Blob>): Promise<void> {
