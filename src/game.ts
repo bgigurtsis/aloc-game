@@ -287,10 +287,10 @@ export class Game {
     const restart = el("button", { class: "cta", type: "button", text: "[ play again ]" });
     restart.addEventListener("click", () => this.dispatch({ type: "restart" }));
 
+    screen.append(el("a", { class: "cta", href: meta.paperUrl, target: "_blank", rel: "noopener", text: "[ read the paper ]" }));
+    screen.append(el("p", { class: "dim small", text: this.formsHint() }));
     screen.append(el("div", { class: "cta-row" }, [share, restart]));
     screen.append(hint);
-    screen.append(el("p", { class: "dim small", text: this.formsHint() }));
-    screen.append(el("a", { class: "cta", href: meta.paperUrl, target: "_blank", rel: "noopener", text: "[ read the paper ]" }));
   }
 
   // Copy for the play-again nudge: the entity has four visual forms and the
