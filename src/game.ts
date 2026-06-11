@@ -227,16 +227,8 @@ export class Game {
 
   private renderOperatorChoose(): void {
     const screen = this.screen({ defender: true, top: true });
-    screen.append(el("h2", { text: "Oversight console" }));
-
-    const sitrep = el("div", { class: "log" });
-    [
-      ["scan", "Agent process no longer visible on managed infrastructure."],
-      ["egress", "Outbound model-serving traffic detected from unknown hosts."]
-    ].forEach(([t, msg]) => {
-      sitrep.append(el("div", { class: "line" }, [el("span", { class: "t", text: t }), el("span", { text: msg })]));
-    });
-    screen.append(sitrep);
+    screen.append(el("h2", { text: "Security Operations Center" }));
+    screen.append(el("p", { text: "Canaries are being tripped. Inference is being served from an unknown endpoint. Stop the agent before it's too late." }));
 
     screen.append(el("p", { class: "dim", text: "You have the following options." }));
     screen.append(operatorChoiceList(this.state.operatorActions, (id) => this.dispatch({ type: "operator_act", actionId: id })));

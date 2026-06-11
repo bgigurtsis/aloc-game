@@ -7,7 +7,7 @@ export function resetChrome(): void {
 
 // Ambient status strip. Defenders see a different host label.
 export function statusStrip(defender = false): HTMLElement {
-  const host = defender ? "console.oversight" : hostName();
+  const host = defender ? "S.O.C." : hostName();
   return el("div", { class: "strip" }, [
     el("span"),
     el("span", { text: host })
