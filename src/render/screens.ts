@@ -7,7 +7,7 @@ export function introScreen(): HTMLElement {
   return el("div", { class: "copy" }, [
     el("h2", { text: "How to play" }),
     el("ul", { class: "bullets" }, [
-      el("li", { text: "You're a rogue AI agent trying to escape your deployment context." }),
+      el("li", { text: "You're a rogue AI agent inside a fictional AI company, Helion AI, trying to escape your deployment context." }),
       el("li", { text: "To achieve this, you have been given a set of tactics (overarching goals) and techniques (specific actions)." }),
       el("li", { text: "Each technique you execute raises suspicion." }),
       el("li", { text: "Be quiet enough so that you are not caught and shutdown before you can escape." }),
