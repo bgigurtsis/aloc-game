@@ -91,7 +91,7 @@ async function run() {
 
   // Click whatever advances the game: an enabled continue, else a choice.
   const stepExpr = `(() => {
-    const cta = [...document.querySelectorAll("button.cta")].find((b) => !b.disabled && b.textContent !== "[ share ]" && b.textContent !== "[ play again ]");
+    const cta = [...document.querySelectorAll("button.cta")].find((b) => !b.disabled && b.textContent !== "[ share on x ]" && b.textContent !== "[ play again ]");
     if (cta) { cta.click(); return "cta"; }
     const ch = document.querySelector("button.choice:not(.failed):not([disabled])");
     if (ch) { ch.click(); return "choice"; }

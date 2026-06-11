@@ -215,7 +215,7 @@ export class Game {
     const screen = this.screen({ defender: true });
     if (!this.reduced) this.flashGlitch(screen);
     screen.append(el("h1", { class: "tight", text: "Oversight" }));
-    screen.append(el("p", { text: "Your perspective has flipped. You are now security operators at the AI lab. Shutdown the rogue agent before it's too late." }));
+    screen.append(el("p", { text: "Your perspective has flipped. You are now a security operator at the AI lab. Shutdown the rogue agent before it's too late." }));
     screen.append(this.continueButton("open console"));
   }
 
@@ -280,7 +280,7 @@ export class Game {
     capture.catch(() => undefined); // surfaced on tap; avoid an unhandled rejection before it
 
     const hint = el("div", { class: "share-hint" });
-    const share = el("button", { class: "cta", type: "button", text: "[ share ]" });
+    const share = el("button", { class: "cta", type: "button", text: "[ share on x ]" });
     share.addEventListener("click", () => void this.handleShare(share, hint, capture));
     const restart = el("button", { class: "cta", type: "button", text: "[ play again ]" });
     restart.addEventListener("click", () => this.dispatch({ type: "restart" }));
