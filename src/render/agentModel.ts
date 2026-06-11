@@ -1,10 +1,17 @@
 import { type Model, type Blob, type Seg, filaments, windingPath } from "./field.ts";
 
-// Seven structural states, matching the validated prototype:
+// Seven structural states:
 //   0 dormant (cold open)   1 Discovery   2 Defence Evasion
 //   3 Resource Acquisition  4 Exfiltration  5 Replication  6 Persistence
 // Stages 0 to 4 are pure organic mass; replication (5) and persistence (6)
 // take the virus filament treatment.
+//
+// Each state carries the previous state's structure forward and adds to it,
+// so the morphs read as one continuous evolution: the dormant blob grows a
+// probe ring (1), the ring dims into a camouflage shroud (2), the probes
+// extend into reaching arms through the shroud (3), one arm stretches out
+// until a fragment breaks free (4), the fragment matures into a second mass
+// (5), and the masses scatter into a persistent web (6).
 
 export const DORMANT = 0;
 
@@ -37,18 +44,32 @@ export function agentModel(state: number): Model {
       }
       break;
 
-    case 2: // Defence Evasion: dim, diffuse, hiding
-      blob(0.5, 0.5, 0.22, 1.1, 0.62);
+    case 2: // Defence Evasion: the probe ring dims into a camouflage haze
+      blob(0.5, 0.5, 0.19, 1.6, 1.0);
+      for (let k = 0; k < 6; k++) {
+        const a = (k / 6) * Math.PI * 2 + 0.4;
+        blob(0.5 + Math.cos(a) * 0.34, 0.5 + Math.sin(a) * 0.34, 0.06, 1.4, 0.42);
+      }
+      blob(0.5, 0.5, 0.31, 1.2, 0.36);
       break;
 
-    case 3: // Resource Acquisition: tendrils reaching out
-      blob(0.5, 0.5, 0.16, 2.2, 1.0);
-      [0.3, 1.7, 2.9, 4.4].forEach((a) => tendril(0.5, 0.5, a, 4, 0.12, 0.075, 0.05, 0.95));
+    case 3: // Resource Acquisition: probes extend into reaching arms
+      blob(0.5, 0.5, 0.31, 1.2, 0.26);
+      blob(0.5, 0.5, 0.19, 2.4, 1.05);
+      for (const k of [0, 1, 3, 5]) {
+        const a = (k / 6) * Math.PI * 2 + 0.4;
+        tendril(0.5, 0.5, a, 5, 0.12, 0.07, 0.05, 0.95);
+      }
       break;
 
-    case 4: // Exfiltration: a fragment escapes with a trail
-      blob(0.42, 0.58, 0.15, 2.2, 0.95);
-      for (let t = 1; t <= 5; t++) blob(0.42 + t * 0.082, 0.58 - t * 0.078, 0.022, 1.8, 0.45 + t * 0.07);
+    case 4: // Exfiltration: the upper-right arm stretches until a fragment breaks free
+      blob(0.45, 0.55, 0.28, 1.2, 0.2);
+      blob(0.45, 0.55, 0.17, 2.2, 1.0);
+      for (const k of [0, 1, 3]) {
+        const a = (k / 6) * Math.PI * 2 + 0.4;
+        tendril(0.45, 0.55, a, 4, 0.12, 0.07, 0.05, 0.8);
+      }
+      for (let t = 1; t <= 5; t++) blob(0.45 + t * 0.078, 0.55 - t * 0.072, 0.022, 1.8, 0.45 + t * 0.07);
       blob(0.86, 0.17, 0.07, 2.5, 1.15);
       break;
 
