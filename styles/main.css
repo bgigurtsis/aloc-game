@@ -2,9 +2,11 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* fluid root size: everything in rem scales with the viewport */
+/* fluid root size: everything in rem scales with the viewport.
+   the svh term compresses type on short viewports so screens fit
+   without scrolling (svh: even before the URL bar collapses) */
 html {
-  font-size: clamp(13px, 1.5vw + 8px, 17px);
+  font-size: min(clamp(13px, 1.5vw + 8px, 17px), clamp(12px, 2.3svh, 17px));
 }
 
 html, body {
@@ -91,7 +93,7 @@ body::after {
   flex-direction: column;
   justify-content: center;
   gap: var(--gap);
-  padding: 24px 0 32px;
+  padding: clamp(12px, 2.5svh, 24px) 0 clamp(14px, 3svh, 32px);
 }
 /* gap above the heading matches the gap below it, so headings sit midway
    between the chrome above and the text they introduce; the button keeps its
@@ -100,7 +102,7 @@ body::after {
   justify-content: flex-start;
   padding-top: var(--gap);
 }
-.screen.top button.cta { margin-top: clamp(40px, 7vh, 64px); }
+.screen.top button.cta { margin-top: clamp(16px, 5svh, 64px); }
 
 /* symmetric margins: headings sit midway between the element above and
    the text they introduce */
@@ -171,7 +173,7 @@ button:focus-visible, a:focus-visible {
 button.cta {
   align-self: center;
   text-align: center;
-  margin-top: 24px;
+  margin-top: clamp(12px, 2.5svh, 24px);
 }
 /* link styled identically to a cta button (e.g. "read the paper") */
 a.cta {
@@ -252,8 +254,8 @@ button.cta.reveal.show {
 
 /* ---------- choices ---------- */
 
-.choices { display: flex; flex-direction: column; gap: 20px; }
-.choice { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; }
+.choices { display: flex; flex-direction: column; gap: clamp(10px, 1.8svh, 20px); }
+.choice { display: flex; flex-direction: column; gap: clamp(5px, 0.9svh, 8px); padding: clamp(10px, 1.6svh, 16px) 18px; }
 .choice .name { color: var(--accent); font-size: 0.93rem; }
 .choice .row {
   display: flex;
@@ -372,10 +374,10 @@ body.defender .choice .desc { color: var(--def-ink); }
 .card {
   border: 1px solid var(--accent-dim);
   background: var(--bg-raise);
-  padding: 18px;
+  padding: clamp(12px, 2svh, 18px) 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: clamp(8px, 1.4svh, 12px);
 }
 .card .head {
   display: flex;
@@ -403,10 +405,10 @@ body.defender .choice .desc { color: var(--def-ink); }
   justify-content: center;
   gap: 12px;
   align-self: center;
-  margin-top: 24px;
+  margin-top: clamp(12px, 2.5svh, 24px);
 }
 .cta-row button.cta { margin-top: 0; }
-.screen.top .cta-row { margin-top: clamp(40px, 7vh, 64px); }
+.screen.top .cta-row { margin-top: clamp(16px, 5svh, 64px); }
 .screen.top .cta-row button.cta { margin-top: 0; }
 .cta-row button:disabled { opacity: 0.5; cursor: default; }
 
@@ -418,6 +420,19 @@ body.defender .choice .desc { color: var(--def-ink); }
   color: var(--dim);
   letter-spacing: 0.08em;
   min-height: 1.2em;
+}
+
+/* ---------- short viewports: final squeeze so nothing clips ---------- */
+
+@media (max-height: 600px) {
+  html, body { line-height: 1.45; }
+  .agent.small { font-size: 5px; }
+  .agent.braille.small { font-size: 6px; }
+  .agent.blocks.small { font-size: 9px; }
+  .agent-canvas.small { width: 96px; }
+  .card .stats { gap: 4px 12px; }
+  .term { min-height: 10em; }
+  .ticker { min-height: 10em; }
 }
 
 /* ---------- reduced motion ---------- */

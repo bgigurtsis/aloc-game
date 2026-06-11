@@ -32,6 +32,7 @@
   --scanline-opacity: 0.04;
   --radius: 0;
 
-  --gap: clamp(14px, 2.5vw, 20px);
-  --pad: clamp(16px, 4vw, 24px);
+  /* svh terms compress vertical rhythm on short viewports */
+  --gap: clamp(10px, min(2.5vw, 2svh), 20px);
+  --pad: clamp(14px, min(4vw, 3svh), 24px);
 }

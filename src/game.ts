@@ -10,7 +10,7 @@ import { stateForStageIndex, DORMANT } from "./render/agentModel.ts";
 import { mountGlobe, type GlobeHandle } from "./render/globe.ts";
 import { shareCard } from "./render/sharecard.ts";
 import { shareRun, type ShareOutcome } from "./render/share.ts";
-import { introScreen, defenderResolution, endingHeadline, explainerScreen, paperCta } from "./render/screens.ts";
+import { introScreen, defenderResolution, endingHeadline, explainerScreen } from "./render/screens.ts";
 import { OPERATOR_ACTIONS, operatorActionById } from "./operator.ts";
 
 export class Game {
@@ -63,7 +63,15 @@ export class Game {
     const alert = opts.defender ? 0 : Math.min(1, this.state.suspicion / meta.detectionThreshold);
     document.documentElement.style.setProperty("--alert", alert.toFixed(3));
 
-    this.root.append(statusStrip(opts.defender));
+    const beforeFirstTactic = this.state.phase === "cold_open" || this.state.phase === "intro";
+    const stageLabel = opts.defender
+      ? ""
+      : beforeFirstTactic
+        ? "dormant"
+        : this.state.stageIndex < tactics.length
+          ? tactics[this.state.stageIndex].tactic
+          : "resolved";
+    this.root.append(statusStrip(stageLabel.toLowerCase(), opts.defender));
     if (opts.meterVisible) this.root.append(meter(this.state.suspicion, this.state.lastDelta));
 
     const screen = el("div", { class: opts.top ? "screen top" : "screen" });
@@ -271,7 +279,6 @@ export class Game {
   private renderShareCard(): void {
     const screen = this.screen({ defender: true, top: true });
     screen.append(shareCard(this.state, this.variant));
-    screen.append(paperCta());
 
     const hint = el("div", { class: "share-hint" });
     const share = el("button", { class: "cta", type: "button", text: "[ share ]" });

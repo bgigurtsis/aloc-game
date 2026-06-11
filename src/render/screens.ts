@@ -1,5 +1,4 @@
 import { el } from "./dom.ts";
-import { meta } from "../content.ts";
 import { type GameState, runStatus } from "../state.ts";
 
 // Static screen content. Endings carry the most weight; copy is deliberate.
@@ -64,12 +63,5 @@ export function explainerScreen(state: GameState): HTMLElement {
     el("p", { text: "The strongest evidence sits in the early tactics. Of 28 techniques in the matrix, only three are rated Full, and none are in Persistence." }),
     el("p", { text: "The later stages are the most dangerous and the least evaluated. Mitigating them needs AI developers and cloud providers working together, before they are needed." }),
     el("p", { class: "small dim", text: "This game is a teaching tool. The trajectories are illustrative, not methods." })
-  ]);
-}
-
-export function paperCta(): HTMLElement {
-  return el("div", { class: "copy" }, [
-    el("p", { class: "small", text: "Read the matrix and the paper it comes from:" }),
-    el("a", { href: meta.paperUrl, target: "_blank", rel: "noopener", text: meta.paperTitle })
   ]);
 }
