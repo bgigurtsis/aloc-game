@@ -298,9 +298,7 @@ button.cta.reveal.show {
 
 /* upload progress: data visibly leaving the deployment boundary */
 .term .bar { display: flex; flex-direction: column; gap: 6px; padding: 2px 0; }
-.term .bar-label { color: var(--ink); white-space: pre-wrap; }
-/* keep the stats (incl. KB/s rate) together on one line */
-.term .bar-stats { white-space: pre; display: inline-block; }
+.term .bar-label { color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
 .term .bar-track {
   height: 10px;
   background: var(--bg);

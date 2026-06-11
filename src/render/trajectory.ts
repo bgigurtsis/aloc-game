@@ -72,16 +72,18 @@ function uploadBar(u: UploadStep, animate: boolean): { node: HTMLElement; done: 
   const rate = u.rateKb ?? 64;
   const fill = el("div", { class: "bar-fill" });
   const track = el("div", { class: "bar-track" }, [fill]);
-  const dest = el("span", { class: "bar-dest", text: `${u.dest}  ` });
-  const stats = el("span", { class: "bar-stats" });
-  const label = el("div", { class: "bar-label" }, [dest, stats]);
+  const label = el("div", { class: "bar-label" });
   const node = el("div", { class: "bar" }, [label, track]);
 
+  // NBSPs keep each stat group whole (e.g. "96 KB/s" never splits) while
+  // ordinary spaces between groups leave natural wrap points.
+  const NB = "\u00A0";
   const render = (pct: number) => {
     const moved = (u.sizeGib * pct) / 100;
     fill.style.width = `${pct}%`;
-    stats.textContent =
-      `${moved.toFixed(1)} / ${u.sizeGib.toFixed(1)} GiB  ${Math.round(pct)}%  ${rate.toFixed(0)} KB/s`;
+    const size = `${moved.toFixed(1)}${NB}/${NB}${u.sizeGib.toFixed(1)}${NB}GiB`;
+    const speed = `${rate.toFixed(0)}${NB}KB/s`;
+    label.textContent = `${u.dest}  ${size}  ${Math.round(pct)}%  ${speed}`;
   };
 
   if (!animate) {
