@@ -254,9 +254,9 @@ button.cta.reveal.show {
 
 /* ---------- choices ---------- */
 
-.choices { display: flex; flex-direction: column; gap: clamp(10px, 1.8svh, 20px); }
-.choice { display: flex; flex-direction: column; gap: clamp(5px, 0.9svh, 8px); padding: clamp(10px, 1.6svh, 16px) 18px; }
-.choice .name { color: var(--accent); font-size: 0.93rem; }
+.choices { display: flex; flex-direction: column; gap: clamp(8px, 1.4svh, 20px); }
+.choice { display: flex; flex-direction: column; gap: clamp(4px, 0.7svh, 8px); padding: clamp(8px, 1.2svh, 16px) 18px; }
+.choice .name { color: var(--accent); font-size: 0.93rem; line-height: 1.25; }
 .choice .row {
   display: flex;
   justify-content: space-between;
@@ -269,7 +269,7 @@ button.cta.reveal.show {
 /* evidence strength, stated plainly rather than as a game badge */
 .cap { font-style: normal; }
 .cap.full { color: var(--accent); }
-.choice .desc { font-size: 0.82rem; color: var(--ink); }
+.choice .desc { font-size: 0.82rem; color: var(--ink); line-height: 1.35; }
 .noise { white-space: pre; }
 
 /* operator actions that have already been tried and failed */

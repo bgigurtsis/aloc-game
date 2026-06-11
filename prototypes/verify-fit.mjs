@@ -7,8 +7,12 @@
 // .shots/fit/ for review. Exits non-zero on any failure.
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+// Chrome path and profile dir are overridable so this runs cross-platform.
+const CHROME = process.env.CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+const PROFILE = process.env.CHROME_PROFILE || join(tmpdir(), "aloc-fit-profile");
 const BASE = "http://localhost:5173";
 const OUT = ".shots/fit";
 mkdirSync(OUT, { recursive: true });
@@ -25,7 +29,7 @@ const port = 9335;
 const chrome = spawn(CHROME, [
   "--headless=new", "--disable-gpu", "--hide-scrollbars",
   `--remote-debugging-port=${port}`,
-  "--user-data-dir=/tmp/aloc-fit-profile",
+  `--user-data-dir=${PROFILE}`,
   "about:blank"
 ]);
 
