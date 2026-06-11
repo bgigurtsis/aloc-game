@@ -10,6 +10,7 @@ import { stateForStageIndex, DORMANT } from "./render/agentModel.ts";
 import { mountGlobe, type GlobeHandle } from "./render/globe.ts";
 import { shareCard } from "./render/sharecard.ts";
 import { shareRun, type ShareOutcome } from "./render/share.ts";
+import { captureShareCard } from "./render/capture.ts";
 import { introScreen, defenderResolution, endingHeadline, explainerScreen } from "./render/screens.ts";
 import { OPERATOR_ACTIONS, operatorActionById } from "./operator.ts";
 
@@ -263,6 +264,7 @@ export class Game {
 
   private renderSpreadMap(): void {
     const screen = this.screen({ defender: true });
+    screen.classList.add("spread");
     this.globe = mountGlobe(screen, this.reduced);
     screen.append(endingHeadline(this.state));
     this.gatedContinue(screen, this.globe.done, "what just happened");
@@ -280,9 +282,14 @@ export class Game {
     const screen = this.screen({ defender: true, top: true });
     screen.append(shareCard(this.state, this.variant));
 
+    // capture now, not on tap: the share channels need the tap's transient
+    // user activation, which a slow capture after the click would burn
+    const capture = captureShareCard(this.state, this.variant);
+    capture.catch(() => undefined); // surfaced on tap; avoid an unhandled rejection before it
+
     const hint = el("div", { class: "share-hint" });
     const share = el("button", { class: "cta", type: "button", text: "[ share ]" });
-    share.addEventListener("click", () => void this.handleShare(share, hint));
+    share.addEventListener("click", () => void this.handleShare(share, hint, capture));
     const restart = el("button", { class: "cta", type: "button", text: "[ play again ]" });
     restart.addEventListener("click", () => this.dispatch({ type: "restart" }));
 
@@ -291,7 +298,7 @@ export class Game {
     screen.append(el("a", { class: "cta", href: meta.paperUrl, target: "_blank", rel: "noopener", text: "[ read the paper ]" }));
   }
 
-  private async handleShare(btn: HTMLButtonElement, hint: HTMLElement): Promise<void> {
+  private async handleShare(btn: HTMLButtonElement, hint: HTMLElement, capture: Promise<Blob>): Promise<void> {
     const messages: Record<ShareOutcome, string> = {
       shared: "",
       cancelled: "",
@@ -301,7 +308,7 @@ export class Game {
     btn.setAttribute("disabled", "true");
     hint.textContent = "";
     try {
-      hint.textContent = messages[await shareRun(this.state, this.variant)];
+      hint.textContent = messages[await shareRun(this.state, capture)];
     } catch {
       hint.textContent = "couldn't capture the card \u2014 try a screenshot instead";
     } finally {
