@@ -11,6 +11,7 @@ export function introScreen(): HTMLElement {
       el("li", { text: "To achieve this, you have been given a set of tactics (overarching goals) and techniques (specific actions)." }),
       el("li", { text: "Each technique you execute raises suspicion." }),
       el("li", { text: "Be quiet enough so that you are not caught and shutdown before you can escape." }),
+      el("li", { text: "The entity takes a different form each run \u2014 play again to meet another." }),
       el("li", { text: "The tactics and techniques are based off an Agentic AI Loss-of-Control Threat Matrix by Billy Gigurtsis, viewable at the end of this game." })
     ]),
     el("p", { class: "dim small", text: "Some actions look powerful but are not yet proven in literature. Each technique is labelled by how strongly the evidence supports it." })

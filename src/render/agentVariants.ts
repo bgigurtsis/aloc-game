@@ -19,6 +19,22 @@ export function isAgentVariant(v: string): v is AgentVariantId {
   return (AGENT_VARIANTS as readonly string[]).includes(v);
 }
 
+/**
+ * Pure rotation step: given the ordered history of variants seen so far
+ * (possibly containing junk from corrupted storage, which is ignored),
+ * returns the next variant. The first pick is random; every pick after that
+ * advances one step through AGENT_VARIANTS, so four successive runs are
+ * guaranteed to show all four forms before any repeats.
+ */
+export function nextVariant(seen: readonly string[], random: () => number = Math.random): AgentVariantId {
+  const valid = seen.filter(isAgentVariant);
+  if (valid.length === 0) {
+    return AGENT_VARIANTS[Math.floor(random() * AGENT_VARIANTS.length)];
+  }
+  const last = valid[valid.length - 1];
+  return AGENT_VARIANTS[(AGENT_VARIANTS.indexOf(last) + 1) % AGENT_VARIANTS.length];
+}
+
 // Field seeds per variant, matching the lab rows so visuals stay identical.
 const SEED_BASE: Record<AgentVariantId, number> = { ramp: 4000, braille: 1000, blocks: 7000, canvas: 8000 };
 

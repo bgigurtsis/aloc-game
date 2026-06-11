@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 // The variant renderers are pure maths and strings (no DOM at import time),
 // so they run directly under node via strip-types, like the reducer tests.
-const { AGENT_VARIANTS, isAgentVariant, renderTextAgent, canvasData } = await import("../src/render/agentVariants.ts");
+const { AGENT_VARIANTS, isAgentVariant, nextVariant, renderTextAgent, canvasData } = await import("../src/render/agentVariants.ts");
 
 const STATES = [0, 1, 2, 3, 4, 5, 6];
 
@@ -22,6 +22,27 @@ test("the variant pool holds the four lab styles", () => {
   for (const v of AGENT_VARIANTS) assert.ok(isAgentVariant(v));
   assert.equal(isAgentVariant("swarm"), false);
   assert.equal(isAgentVariant(""), false);
+});
+
+test("variant rotation covers all four forms before repeating", () => {
+  const seen = [];
+  for (let i = 0; i < AGENT_VARIANTS.length; i++) seen.push(nextVariant(seen));
+  assert.equal(new Set(seen).size, AGENT_VARIANTS.length, "first four picks must be distinct");
+  // the fifth pick wraps the cycle back to the first
+  assert.equal(nextVariant(seen), seen[0]);
+});
+
+test("rotation start follows the random source, then advances in order", () => {
+  assert.equal(nextVariant([], () => 0), AGENT_VARIANTS[0]);
+  assert.equal(nextVariant([], () => 0.99), AGENT_VARIANTS[AGENT_VARIANTS.length - 1]);
+  assert.equal(nextVariant(["ramp"]), "braille");
+  assert.equal(nextVariant(["canvas"]), "ramp");
+});
+
+test("rotation ignores corrupt history entries", () => {
+  assert.equal(nextVariant(["swarm", "", "ramp", "nonsense"]), "braille");
+  // a history of pure junk behaves like a first run: random but valid
+  assert.ok(isAgentVariant(nextVariant(["junk", "42"], () => 0.5)));
 });
 
 test("text variants render the exact grid at every state", () => {

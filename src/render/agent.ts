@@ -1,6 +1,7 @@
 import {
   AGENT_VARIANTS,
   isAgentVariant,
+  nextVariant,
   renderTextAgent,
   drawCanvasAgent,
   type AgentVariantId
@@ -18,16 +19,50 @@ const MAT_MS = 1100;
 /** Wake pulse decay constant: visually settled after roughly 2 seconds. */
 const WAKE_DECAY_MS = 700;
 
+// Variant rotation history, persisted so replays cycle through the forms.
+// Because the rotation is a strict cycle, the last 4 entries always cover
+// every distinct form seen, so the history can stay capped at 4.
+const SEEN_KEY = "aloc.seenVariants";
+
+function loadSeen(): AgentVariantId[] {
+  try {
+    const raw = window.localStorage.getItem(SEEN_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((v): v is AgentVariantId => typeof v === "string" && isAgentVariant(v));
+  } catch {
+    return [];
+  }
+}
+
+function saveSeen(seen: AgentVariantId[]): void {
+  try {
+    window.localStorage.setItem(SEEN_KEY, JSON.stringify(seen.slice(-AGENT_VARIANTS.length)));
+  } catch {
+    // storage unavailable: each run falls back to a fresh random pick
+  }
+}
+
+/** How many of the four forms this player has encountered, for UI copy. */
+export function seenVariantCount(): number {
+  return new Set(loadSeen()).size;
+}
+
 /**
- * Picks the visual variant for a run: random, unless overridden with an
+ * Picks the visual variant for a run, unless overridden with an
  * `?agent=<id>` query parameter (allowlist-checked) for testing and the lab.
+ * The first run gets a random form; each replay deterministically advances
+ * to the next one, so all four appear before any repeats.
  */
 export function pickVariant(): AgentVariantId {
   if (typeof window !== "undefined") {
     const forced = new URLSearchParams(window.location.search).get("agent");
     if (forced && isAgentVariant(forced)) return forced;
   }
-  return AGENT_VARIANTS[Math.floor(Math.random() * AGENT_VARIANTS.length)];
+  const seen = loadSeen();
+  const next = nextVariant(seen);
+  saveSeen([...seen, next]);
+  return next;
 }
 
 export interface AgentHandle {

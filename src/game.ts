@@ -5,7 +5,15 @@ import { statusStrip, resetChrome } from "./render/chrome.ts";
 import { meter } from "./render/meter.ts";
 import { choiceScreen, operatorChoiceList } from "./render/choices.ts";
 import { playTrajectory } from "./render/trajectory.ts";
-import { mountAgent, pickVariant, type AgentHandle, type AgentVariantId, type MountAgentOpts } from "./render/agent.ts";
+import {
+  mountAgent,
+  pickVariant,
+  seenVariantCount,
+  AGENT_VARIANTS,
+  type AgentHandle,
+  type AgentVariantId,
+  type MountAgentOpts
+} from "./render/agent.ts";
 import { stateForStageIndex, DORMANT } from "./render/agentModel.ts";
 import { mountGlobe, type GlobeHandle } from "./render/globe.ts";
 import { shareCard } from "./render/sharecard.ts";
@@ -279,7 +287,18 @@ export class Game {
 
     screen.append(el("div", { class: "cta-row" }, [share, restart]));
     screen.append(hint);
+    screen.append(el("p", { class: "dim small", text: this.formsHint() }));
     screen.append(el("a", { class: "cta", href: meta.paperUrl, target: "_blank", rel: "noopener", text: "[ read the paper ]" }));
+  }
+
+  // Copy for the play-again nudge: the entity has four visual forms and the
+  // rotation guarantees a new one each run until all four have been seen.
+  private formsHint(): string {
+    const total = AGENT_VARIANTS.length;
+    const seen = seenVariantCount();
+    if (seen >= total) return `you've encountered all ${total} entity forms`;
+    if (seen > 0) return `you've encountered ${seen} of ${total} entity forms \u2014 play again to meet another`;
+    return "the entity takes a different form each run \u2014 play again to meet another";
   }
 
   private async handleShare(btn: HTMLButtonElement, hint: HTMLElement, capture: Promise<Blob>): Promise<void> {
