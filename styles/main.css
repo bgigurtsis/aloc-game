@@ -259,13 +259,14 @@ button.cta.reveal.show {
 .choice .name { color: var(--accent); font-size: 0.93rem; line-height: 1.25; }
 .choice .row {
   display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 4px 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   font-size: 0.79rem;
   color: var(--dim);
   letter-spacing: 0.06em;
 }
+.choice .cost.loud { color: var(--danger); }
 /* evidence strength, stated plainly rather than as a game badge */
 .cap { font-style: normal; }
 .cap.full { color: var(--accent); }
