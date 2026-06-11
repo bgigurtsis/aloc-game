@@ -254,8 +254,10 @@ export class Game {
     this.gatedContinue(screen, done, allTried ? "view status" : "back to console");
   }
 
+  // Back in the agent's hands: the operator console failed, so the ending
+  // returns to the agent palette (suspicion hue included).
   private renderSpreadMap(): void {
-    const screen = this.screen({ defender: true });
+    const screen = this.screen();
     screen.classList.add("spread");
     this.globe = mountGlobe(screen, this.reduced);
     screen.append(endingHeadline(this.state));
