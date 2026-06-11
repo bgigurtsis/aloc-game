@@ -266,7 +266,7 @@ button.cta.reveal.show {
   color: var(--dim);
   letter-spacing: 0.06em;
 }
-.choice .cost.loud { color: var(--danger); }
+.choice .cost .amount { color: var(--danger); }
 /* evidence strength, stated plainly rather than as a game badge */
 .cap { font-style: normal; }
 .cap.full { color: var(--accent); }

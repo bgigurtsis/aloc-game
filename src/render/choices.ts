@@ -27,10 +27,11 @@ export function choiceScreen(tactic: Tactic, onChoose: (id: string) => void): HT
       el("span", { class: "desc", text: t.description }),
       el("div", { class: "row" }, [
         el("span", { class: capClass, text: CAPABILITY_LABEL[t.capability] }),
-        el("span", {
-          class: noiseHint(t.suspicion) === "loud" ? "cost loud" : "cost",
-          text: `${noiseHint(t.suspicion)} \u00b7 +${t.suspicion} suspicion`
-        })
+        el("span", { class: "cost" }, [
+          el("span", { text: `${noiseHint(t.suspicion)} \u00b7 ` }),
+          el("span", { class: "amount", text: `+${t.suspicion}` }),
+          el("span", { text: " suspicion" })
+        ])
       ])
     ]);
     btn.addEventListener("click", () => onChoose(t.id));
