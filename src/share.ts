@@ -32,3 +32,18 @@ export function buildShareText(state: GameState): string {
 export function xIntentUrl(text: string, url: string): string {
   return `https://x.com/intent/post?${new URLSearchParams({ text, url })}`;
 }
+
+/** The X app's composer deep link (the app still registers the twitter:// scheme). */
+export function xAppPostUrl(text: string, url: string): string {
+  return `twitter://post?message=${encodeURIComponent(`${text} ${url}`)}`;
+}
+
+/**
+ * Android Chrome intent URL: opens the X app composer when the app is
+ * installed, otherwise navigates to the web intent via the fallback param.
+ */
+export function xAndroidIntentUrl(text: string, url: string): string {
+  const message = encodeURIComponent(`${text} ${url}`);
+  const fallback = encodeURIComponent(xIntentUrl(text, url));
+  return `intent://post?message=${message}#Intent;scheme=twitter;package=com.twitter.android;S.browser_fallback_url=${fallback};end`;
+}

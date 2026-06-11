@@ -187,7 +187,7 @@ export async function captureShareCard(state: GameState, variant: AgentVariantId
   // url line
   ctx.font = font(12);
   ctx.fillStyle = COLOR.dim;
-  ctx.fillText("play it yourself \u00b7 link in post", PAD, y);
+  ctx.fillText("play it yourself \u00b7 offpolicy.bot", PAD, y);
 
   return toBlob(canvas);
 }

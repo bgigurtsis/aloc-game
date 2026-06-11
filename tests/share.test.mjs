@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 // share.ts is pure (no DOM at import or call time), so the share text and
 // intent URL builders run directly under node, like the reducer tests.
-const { buildShareText, xIntentUrl, STATUS_LABEL, STATUS_LINE } = await import("../src/share.ts");
+const { buildShareText, xIntentUrl, xAppPostUrl, xAndroidIntentUrl, STATUS_LABEL, STATUS_LINE } = await import("../src/share.ts");
 const { initialState, runStatus, tacticReached } = await import("../src/state.ts");
 const { meta } = await import("../src/content.ts");
 
@@ -44,4 +44,26 @@ test("the intent url targets the X composer and round-trips its params", () => {
   const params = new URL(intent).searchParams;
   assert.equal(params.get("text"), text);
   assert.equal(params.get("url"), url);
+});
+
+test("the app deep link carries the full message in the twitter scheme", () => {
+  const text = buildShareText(clean);
+  const url = "https://example.com/play";
+  const link = xAppPostUrl(text, url);
+  assert.ok(link.startsWith("twitter://post?message="));
+  assert.equal(decodeURIComponent(link.slice("twitter://post?message=".length)), `${text} ${url}`);
+});
+
+test("the android intent url targets the X package and falls back to the web intent", () => {
+  const text = buildShareText(clean);
+  const url = "https://example.com/play";
+  const intent = xAndroidIntentUrl(text, url);
+  assert.ok(intent.startsWith("intent://post?message="));
+  assert.ok(intent.endsWith(";end"));
+  assert.ok(intent.includes("scheme=twitter"));
+  assert.ok(intent.includes("package=com.twitter.android"));
+  const fallback = intent.match(/S\.browser_fallback_url=([^;]+);/)[1];
+  assert.equal(decodeURIComponent(fallback), xIntentUrl(text, url));
+  const message = intent.match(/^intent:\/\/post\?message=([^#]+)#/)[1];
+  assert.equal(decodeURIComponent(message), `${text} ${url}`);
 });
