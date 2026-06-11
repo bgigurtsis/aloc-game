@@ -339,23 +339,33 @@ body.defender .choice .desc { color: var(--def-ink); }
 
 /* the globe lives on the defender's console; only the markers are the
    agent's phosphor green (--alert is 0 here, so --accent reads green) */
+/* the svh term keeps the 30-line globe from eating short viewports */
 .globe {
   color: var(--def-ink);
   line-height: 1;
   white-space: pre;
-  font-size: clamp(7px, 2.4vw, 12px);
+  font-size: clamp(6px, min(2.4vw, 0.9svh), 12px);
   align-self: center;
 }
 .globe .marker { color: var(--accent); text-shadow: var(--glow); }
 
+/* spread map: globe + ticker + headline + cta is the tallest stack in the
+   game, so the copy runs compact on this screen */
+.screen.spread { gap: clamp(8px, 1.2svh, 20px); }
+.screen.spread h1 { font-size: 1.15rem; }
+.screen.spread p { font-size: 0.86rem; }
+
+/* min-height reserves room for all region lines so the centred layout does
+   not jump as they appear; it tracks the (svh-compressed) font size */
 .ticker {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 0.9rem;
+  gap: clamp(2px, 0.4svh, 4px);
+  font-size: clamp(9px, 1.6svh, 0.9rem);
+  line-height: 1.4;
   color: var(--def-ink);
   letter-spacing: 0.04em;
-  min-height: 14em;
+  min-height: 12.5em;
 }
 .ticker .online { color: var(--accent); text-shadow: var(--glow); }
 .ticker .region { color: var(--def-accent); }
