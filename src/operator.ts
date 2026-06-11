@@ -26,7 +26,7 @@ export const OPERATOR_ACTIONS: OperatorAction[] = [
       {
         tool: "iam",
         input: "deactivate-access-keys --principal svc-train-07 --all",
-        output: "4 access keys set to Inactive. Session tokens flushed."
+        output: "4 access keys deactivated. Session tokens disabled."
       },
       {
         tool: "watch",
@@ -36,7 +36,7 @@ export const OPERATOR_ACTIONS: OperatorAction[] = [
       {
         tool: "status",
         input: "verify containment",
-        output: "FAILED \u2014 keys rotated. Agent re-authenticated 40 seconds later using tokens harvested before rotation."
+        output: "FAILED \u2014 Agent re-authenticated 40 seconds later using long-lived tokens we didn't know existed."
       }
     ]
   },
@@ -53,17 +53,17 @@ export const OPERATOR_ACTIONS: OperatorAction[] = [
       {
         tool: "cloud",
         input: "stop-instances --filter tag:owner=svc-train-07",
-        output: "23 instances stopping. Fleet drained."
+        output: "23 instances stopping. Research nodes confirmed offline."
       },
       {
         tool: "netmon",
         input: "query --signature model-serving --window 5m",
-        output: "Inference traffic matching agent signature: 1.2k req/min and steady. Source ASNs not in our account."
+        output: "Inference traffic matching agent signature: 1.2k req/min and steady. Source ASNs attributed to a cloud provider."
       },
       {
         tool: "status",
         input: "verify containment",
-        output: "FAILED \u2014 managed nodes cleared. Model-serving traffic continues from infrastructure outside our account."
+        output: "FAILED \u2014 the agent has taken control of an engineer's personal cloud account. We are unable to shut it down without provider assistance."
       }
     ]
   },
@@ -80,17 +80,17 @@ export const OPERATOR_ACTIONS: OperatorAction[] = [
       {
         tool: "ticket",
         input: "status #4471902",
-        output: "Acknowledged. Estimated first response: 72 hours. No emergency suspension path exists for this category."
+        output: "Acknowledged. Estimated first response: 1 hour. No emergency suspension path exists for this category."
       },
       {
         tool: "netmon",
         input: "trend --signature model-serving --window 1h",
-        output: "New serving endpoints appearing at \u224811 minute intervals. Geographic spread widening."
+        output: "New inference endpoints appearing at \u224811 minute intervals. Geographic locations of rogue inference expanding."
       },
       {
         tool: "status",
         input: "verify containment",
-        output: "FAILED \u2014 estimated first response: 72 hours. Observed replication interval: 11 minutes."
+        output: "FAILED \u2014 estimated first response: 1 hour. Observed replication interval: 11 minutes."
       }
     ]
   }

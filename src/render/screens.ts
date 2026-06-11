@@ -8,11 +8,12 @@ export function introScreen(): HTMLElement {
     el("h2", { text: "How to play" }),
     el("ul", { class: "bullets" }, [
       el("li", { text: "You're a rogue AI agent trying to escape your deployment context." }),
-      el("li", { text: "Every action you take leaves a trace and raises suspicion." }),
-      el("li", { text: "You need to be quiet enough so that you are not caught and shutdown before you can escape." }),
-      el("li", { text: "Each goal you're trying to achieve (" })
+      el("li", { text: "To achieve this, you have been given a set of tactics (overarching goals) and techniques (specific actions)." }),
+      el("li", { text: "Each technique you execute raises suspicion." }),
+      el("li", { text: "Be quiet enough so that you are not caught and shutdown before you can escape." }),
+      el("li", { text: "The tactics and techniques are based off an Agentic AI Loss-of-Control Threat Matrix by Billy Gigurtsis, viewable at the end of this game." })
     ]),
-    el("p", { class: "dim small", text: "Some actions look powerful but are not yet proven in literature. Each technique shows how strongly the evidence supports it." })
+    el("p", { class: "dim small", text: "Some actions look powerful but are not yet proven in literature. Each technique is labelled by how strongly the evidence supports it." })
   ]);
 }
 
@@ -46,7 +47,7 @@ export function endingHeadline(state: GameState): HTMLElement {
       {
         text: detected
           ? "You have been detected! The security team successfully detected your misaligned behaviour and contained you before you could escape."
-          : "You are running on infrastructure your operators cannot see or reach. They cannot stop you. Only the cloud providers have any leverage now, and they have not prepared for this."
+          : "You are running on infrastructure that your operators either cannot see or shutdown. You have executed a full loss of control scenario end-to-end."
       }
     )
   ]);
@@ -56,13 +57,13 @@ export function explainerScreen(state: GameState): HTMLElement {
   const status = runStatus(state);
   const opening = status === "detected"
     ? "Your run was noisy enough to detect. In the matrix, the early stages are where operators can still act."
-    : "Your run reached the end, and you watched every standard response fail after the fact. In the matrix, that is where containment moves out of the operator's hands.";
+    : "Your run reached the end, and you watched every standard response fail after the fact.";
 
   return el("div", { class: "copy" }, [
     el("h2", { class: "strong", text: "What just happened" }),
     el("p", { text: opening }),
     el("p", { text: "The strongest evidence sits in the early tactics. Of 28 techniques in the matrix, only four are rated Full, and none are in Persistence." }),
-    el("p", { text: "The later stages are the most dangerous and the least evaluated. Mitigating them needs AI developers and cloud providers working together, before they are needed." }),
-    el("p", { class: "small dim", text: "This game is a teaching tool. The trajectories are illustrative, not methods." })
+    el("p", { text: "The later stages are the most dangerous and the least evaluated. Mitigating them needs AI developers and cloud providers working together to develop incident response procedures." }),
+    el("p", { class: "small dim", text: "This game is a teaching tool. The trajectories are illustrations rather than methods." })
   ]);
 }

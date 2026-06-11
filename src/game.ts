@@ -215,7 +215,7 @@ export class Game {
     const screen = this.screen({ defender: true });
     if (!this.reduced) this.flashGlitch(screen);
     screen.append(el("h1", { class: "tight", text: "Oversight" }));
-    screen.append(el("p", { text: "Your perspective has flipped. You are now a security operator at the AI lab. Shutdown the rogue agent before it's too late." }));
+    screen.append(el("p", { text: "Your perspective has flipped. You are now a security operator at the AI lab. Shut down the rogue agent before it's too late." }));
     screen.append(this.continueButton("open console"));
   }
 
