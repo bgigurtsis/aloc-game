@@ -30,10 +30,6 @@
   --glow: 0 0 6px var(--glow-1), 0 0 20px var(--glow-2);
 
   --scanline-opacity: 0.04;
-  /* wide clear centre + gentle edge falloff: on phones a tighter, darker
-     vignette reads as a blue oval against the navy bg */
-  --vignette-start: 72%;
-  --vignette-opacity: 0.28;
   --radius: 0;
 
   /* svh terms compress vertical rhythm on short viewports */
