@@ -39,7 +39,7 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  background: radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.5) 100%);
+  background: radial-gradient(ellipse at center, transparent var(--vignette-start), rgb(0 0 0 / var(--vignette-opacity)) 100%);
 }
 
 #app {
