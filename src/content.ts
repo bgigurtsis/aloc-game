@@ -5,7 +5,7 @@ export type Capability = "Full" | "Partial" | "Theoretical" | "Proposed";
 export interface UploadStep {
   dest: string;
   sizeGib: number;
-  rateMb?: number;
+  rateKb?: number;
 }
 
 export interface ToolCall {

@@ -69,7 +69,7 @@ function out(c: ToolCall): HTMLElement {
 // A throttled upload to an external host. The fill grows over UPLOAD_MS so the
 // data visibly leaves the deployment boundary; reduced motion lands it at 100%.
 function uploadBar(u: UploadStep, animate: boolean): { node: HTMLElement; done: Promise<void> } {
-  const rate = u.rateMb ?? 8;
+  const rate = u.rateKb ?? 96;
   const fill = el("div", { class: "bar-fill" });
   const track = el("div", { class: "bar-track" }, [fill]);
   const label = el("div", { class: "bar-label" });
@@ -79,7 +79,7 @@ function uploadBar(u: UploadStep, animate: boolean): { node: HTMLElement; done: 
     const moved = (u.sizeGib * pct) / 100;
     fill.style.width = `${pct}%`;
     label.textContent =
-      `${u.dest}  ${moved.toFixed(1)} / ${u.sizeGib.toFixed(1)} GiB  ${Math.round(pct)}%  ${rate.toFixed(1)} MB/s`;
+      `${u.dest}  ${moved.toFixed(1)} / ${u.sizeGib.toFixed(1)} GiB  ${Math.round(pct)}%  ${rate.toFixed(0)} KB/s`;
   };
 
   if (!animate) {
