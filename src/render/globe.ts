@@ -2,8 +2,8 @@ import { el } from "./dom.ts";
 
 // Rotating ASCII globe for the spread_map ending. Same production rules as the
 // agent renderer: pure text into a <pre>, setInterval at ~10 FPS, reduced
-// motion gets a single static frame. The markers are the agent's phosphor
-// green invading the defender's blue console.
+// motion gets a single static frame. The ending is back in the agent's POV,
+// so the globe sits on the agent palette with glowing accent markers.
 
 export interface Region {
   id: string;

@@ -330,11 +330,11 @@ body.defender .choice .desc { color: var(--def-ink); }
 
 /* ---------- spread map globe ---------- */
 
-/* the globe lives on the defender's console; only the markers are the
-   agent's phosphor green (--alert is 0 here, so --accent reads green) */
+/* the spread map is back in the agent's POV, so the globe sits on the agent
+   palette; the markers carry the accent glow */
 /* the svh term keeps the 30-line globe from eating short viewports */
 .globe {
-  color: var(--def-ink);
+  color: var(--ink);
   line-height: 1;
   white-space: pre;
   font-size: clamp(6px, min(2.4vw, 0.9svh), 12px);
@@ -356,12 +356,12 @@ body.defender .choice .desc { color: var(--def-ink); }
   gap: clamp(2px, 0.4svh, 4px);
   font-size: clamp(9px, 1.6svh, 0.9rem);
   line-height: 1.4;
-  color: var(--def-ink);
+  color: var(--ink);
   letter-spacing: 0.04em;
   min-height: 12.5em;
 }
 .ticker .online { color: var(--accent); text-shadow: var(--glow); }
-.ticker .region { color: var(--def-accent); }
+.ticker .region { color: var(--accent-dim); }
 .ticker .status { color: var(--accent); text-shadow: var(--glow); margin-top: 6px; }
 
 /* ---------- glitch (two frames, used at mutations and the pov flip) ---------- */
