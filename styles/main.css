@@ -180,7 +180,6 @@ a.cta {
   text-decoration: none;
   align-self: center;
   text-align: center;
-  margin-top: 12px;
 }
 a.cta:hover { border-color: var(--accent); }
 
@@ -401,18 +400,17 @@ body.defender .choice .desc { color: var(--def-ink); }
 .card .verdict { font-size: 0.86rem; color: var(--ink); border-top: 1px solid var(--panel-line); padding-top: 10px; }
 .card .url { font-size: 0.75rem; color: var(--dim); letter-spacing: 0.08em; }
 
-/* share + play again sit side by side under the card */
+/* share + play again sit side by side; the screen's flex gap spaces the
+   share stack evenly, so the row adds no margin of its own */
 .cta-row {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
   align-self: center;
-  margin-top: clamp(12px, 2.5svh, 24px);
 }
-.cta-row button.cta { margin-top: 0; }
-.screen.top .cta-row { margin-top: clamp(16px, 5svh, 64px); }
-.screen.top .cta-row button.cta { margin-top: 0; }
+/* outranks the .screen.top button.cta push-down, which assumes a lone cta */
+.cta-row button.cta, .screen.top .cta-row button.cta { margin-top: 0; }
 .cta-row button:disabled { opacity: 0.5; cursor: default; }
 
 /* outcome line for the share flow ("image copied — paste it...") */
